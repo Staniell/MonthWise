@@ -6,9 +6,10 @@ import { colors, layout } from "@/theme";
 import { ExpenseWithCategory } from "@/types";
 import { formatCurrency, formatWithSign, getMonthName } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
+import { FlashList } from "@shopify/flash-list";
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 export const MonthDetailScreen = () => {
   const router = useRouter();
@@ -103,7 +104,7 @@ export const MonthDetailScreen = () => {
         }}
       />
 
-      <FlatList
+      <FlashList
         data={expensesWithCategories}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <ExpenseItem expense={item} onPress={() => showEditExpenseModal(item.id)} />}

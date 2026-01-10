@@ -124,10 +124,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Load months for the year
       const monthRecords = await MonthRepository.findByYear(year);
 
-      // Build summaries for all 12 months
-      const summaries: MonthSummary[] = [];
-
-      for (let m = 1; m <= 12; m++) {
+      // Build summaries for all 12 months in parallel
+      const summaryPromises = Array.from({ length: 12 }, async (_, i) => {
+        const m = i + 1;
         const monthRecord = monthRecords.find((r) => r.month === m) ?? null;
         let expenses: Expense[] = [];
 
@@ -135,11 +134,10 @@ export const useAppStore = create<AppState>((set, get) => ({
           expenses = await ExpenseRepository.findByMonthId(monthRecord.id);
         }
 
-        const summary = CalculationService.createMonthSummary(year, m, monthRecord, defaultAllowance, expenses);
+        return CalculationService.createMonthSummary(year, m, monthRecord, defaultAllowance, expenses);
+      });
 
-        summaries.push(summary);
-      }
-
+      const summaries = await Promise.all(summaryPromises);
       const totalExcess = CalculationService.calculateTotalExcess(summaries);
 
       set({

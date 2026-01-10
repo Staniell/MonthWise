@@ -11,6 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { View } from "react-native";
 
+import { ErrorBoundary } from "@/components/common";
 import { getDatabase } from "@/database";
 import { useAppStore } from "@/stores";
 import { colors } from "@/theme";
@@ -55,28 +56,30 @@ export default function RootLayout() {
 
   // Application Root
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <StatusBar style="light" backgroundColor={colors.background} />
-      <Stack
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: colors.background,
-          },
-          headerTintColor: colors.text,
-          headerTitleStyle: {
-            fontFamily: "Outfit_600SemiBold",
-            color: colors.text,
-          },
-          headerShadowVisible: false, // Minimalist look
-          contentStyle: {
-            backgroundColor: colors.background,
-          },
-          animation: "slide_from_right", // Elegant transition
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-    </View>
+    <ErrorBoundary>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <StatusBar style="light" backgroundColor={colors.background} />
+        <Stack
+          screenOptions={{
+            headerStyle: {
+              backgroundColor: colors.background,
+            },
+            headerTintColor: colors.text,
+            headerTitleStyle: {
+              fontFamily: "Outfit_600SemiBold",
+              color: colors.text,
+            },
+            headerShadowVisible: false, // Minimalist look
+            contentStyle: {
+              backgroundColor: colors.background,
+            },
+            animation: "slide_from_right", // Elegant transition
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+      </View>
+    </ErrorBoundary>
   );
 }
