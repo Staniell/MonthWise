@@ -83,107 +83,6 @@ export const MonthDetailScreen = () => {
     }
   };
 
-  const renderHeader = () => {
-    if (!currentSummary) return null;
-
-    const {
-      text: remainingText,
-      isPositive,
-      isNegative,
-    } = formatWithSign(currentSummary.remainingCents, undefined, currency, hideCents);
-    let remainingColor: string = colors.textSecondary;
-    if (isPositive) remainingColor = colors.success;
-    if (isNegative) remainingColor = colors.danger;
-
-    const hasOverride = currentSummary.allowanceOverrideCents !== null;
-
-    return (
-      <View style={styles.header}>
-        <Card style={styles.summaryCard}>
-          <View style={styles.mainStat}>
-            <AppText variant="caption" color={colors.textMuted}>
-              Remaining Allowance
-            </AppText>
-            <AppText variant="display" color={remainingColor}>
-              {remainingText}
-            </AppText>
-          </View>
-
-          <View style={styles.secondaryStats}>
-            {/* Tappable Allowance Row */}
-            <TouchableOpacity style={styles.statRow} onPress={handleAllowancePress} activeOpacity={0.7}>
-              <View style={styles.allowanceLabel}>
-                <AppText variant="body" color={colors.textMuted}>
-                  Allowance
-                </AppText>
-                {hasOverride && (
-                  <View style={styles.overrideBadge}>
-                    <AppText variant="caption" color={colors.primaryForeground}>
-                      Custom
-                    </AppText>
-                  </View>
-                )}
-              </View>
-              <View style={styles.allowanceValue}>
-                <AppText variant="bodyMedium">
-                  {formatCurrency(currentSummary.allowanceCents, undefined, currency, hideCents)}
-                </AppText>
-                <Ionicons name={isEditingAllowance ? "chevron-up" : "chevron-down"} size={16} color={colors.primary} />
-              </View>
-            </TouchableOpacity>
-
-            {/* Expandable Editor */}
-            {isEditingAllowance && (
-              <View style={styles.allowanceEditor}>
-                <Input
-                  placeholder="Custom allowance"
-                  value={allowanceInput}
-                  onChangeText={setAllowanceInput}
-                  keyboardType="numeric"
-                  containerStyle={{ marginBottom: layout.spacing.s }}
-                />
-                <View style={styles.editorButtons}>
-                  <Button title="Save" size="s" onPress={handleSaveAllowance} loading={isSaving} style={{ flex: 1 }} />
-                  {hasOverride && (
-                    <Button
-                      title="Reset"
-                      size="s"
-                      variant="secondary"
-                      onPress={handleResetAllowance}
-                      loading={isSaving}
-                      style={{ flex: 1 }}
-                    />
-                  )}
-                </View>
-                {hasOverride && (
-                  <AppText variant="caption" color={colors.textMuted} style={{ marginTop: layout.spacing.xs }}>
-                    Default: {formatCurrency(defaultAllowanceCents, undefined, currency, hideCents)}
-                  </AppText>
-                )}
-              </View>
-            )}
-
-            <View style={styles.statRow}>
-              <AppText variant="body" color={colors.textMuted}>
-                Spent
-              </AppText>
-              <AppText variant="bodyMedium">
-                {formatCurrency(currentSummary.spentCents, undefined, currency, hideCents)}
-              </AppText>
-            </View>
-          </View>
-        </Card>
-
-        <View style={styles.listHeader}>
-          <AppText variant="heading3">Expenses</AppText>
-          <AppText variant="caption" color={colors.textMuted}>
-            {selectedMonthExpenses.length} transactions
-          </AppText>
-        </View>
-      </View>
-    );
-  };
-
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -220,7 +119,110 @@ export const MonthDetailScreen = () => {
             }}
           />
         )}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={
+          currentSummary ? (
+            <View style={styles.header}>
+              <Card style={styles.summaryCard}>
+                <View style={styles.mainStat}>
+                  <AppText variant="caption" color={colors.textMuted}>
+                    Remaining Allowance
+                  </AppText>
+                  <AppText
+                    variant="display"
+                    color={
+                      currentSummary.remainingCents > 0
+                        ? colors.success
+                        : currentSummary.remainingCents < 0
+                        ? colors.danger
+                        : colors.textSecondary
+                    }
+                  >
+                    {formatWithSign(currentSummary.remainingCents, undefined, currency, hideCents).text}
+                  </AppText>
+                </View>
+
+                <View style={styles.secondaryStats}>
+                  <TouchableOpacity style={styles.statRow} onPress={handleAllowancePress} activeOpacity={0.7}>
+                    <View style={styles.allowanceLabel}>
+                      <AppText variant="body" color={colors.textMuted}>
+                        Allowance
+                      </AppText>
+                      {currentSummary.allowanceOverrideCents !== null && (
+                        <View style={styles.overrideBadge}>
+                          <AppText variant="caption" color={colors.primaryForeground}>
+                            Custom
+                          </AppText>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.allowanceValue}>
+                      <AppText variant="bodyMedium">
+                        {formatCurrency(currentSummary.allowanceCents, undefined, currency, hideCents)}
+                      </AppText>
+                      <Ionicons
+                        name={isEditingAllowance ? "chevron-up" : "chevron-down"}
+                        size={16}
+                        color={colors.primary}
+                      />
+                    </View>
+                  </TouchableOpacity>
+
+                  {isEditingAllowance && (
+                    <View style={styles.allowanceEditor}>
+                      <Input
+                        placeholder="Custom allowance"
+                        value={allowanceInput}
+                        onChangeText={setAllowanceInput}
+                        keyboardType="numeric"
+                        containerStyle={{ marginBottom: layout.spacing.s }}
+                      />
+                      <View style={styles.editorButtons}>
+                        <Button
+                          title="Save"
+                          size="s"
+                          onPress={handleSaveAllowance}
+                          loading={isSaving}
+                          style={{ flex: 1 }}
+                        />
+                        {currentSummary.allowanceOverrideCents !== null && (
+                          <Button
+                            title="Reset"
+                            size="s"
+                            variant="secondary"
+                            onPress={handleResetAllowance}
+                            loading={isSaving}
+                            style={{ flex: 1 }}
+                          />
+                        )}
+                      </View>
+                      {currentSummary.allowanceOverrideCents !== null && (
+                        <AppText variant="caption" color={colors.textMuted} style={{ marginTop: layout.spacing.xs }}>
+                          Default: {formatCurrency(defaultAllowanceCents, undefined, currency, hideCents)}
+                        </AppText>
+                      )}
+                    </View>
+                  )}
+
+                  <View style={styles.statRow}>
+                    <AppText variant="body" color={colors.textMuted}>
+                      Spent
+                    </AppText>
+                    <AppText variant="bodyMedium">
+                      {formatCurrency(currentSummary.spentCents, undefined, currency, hideCents)}
+                    </AppText>
+                  </View>
+                </View>
+              </Card>
+
+              <View style={styles.listHeader}>
+                <AppText variant="heading3">Expenses</AppText>
+                <AppText variant="caption" color={colors.textMuted}>
+                  {selectedMonthExpenses.length} transactions
+                </AppText>
+              </View>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <AppText color={colors.textMuted} align="center">
@@ -233,6 +235,8 @@ export const MonthDetailScreen = () => {
         }
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        removeClippedSubviews={false}
       />
 
       <FAB onPress={showAddExpenseModal} />
