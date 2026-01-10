@@ -86,6 +86,7 @@ export const CalculationService = {
     defaultAllowanceCents: number,
     expenses: Expense[]
   ): MonthSummary {
+    const allowanceOverrideCents = monthRecord?.allowanceOverrideCents ?? null;
     const allowanceCents = this.getMonthlyAllowance(monthRecord, defaultAllowanceCents);
     const spentCents = this.calculateTotalSpent(expenses);
     const remainingCents = this.calculateRemaining(allowanceCents, spentCents);
@@ -95,6 +96,7 @@ export const CalculationService = {
       month,
       monthId: monthRecord?.id ?? null,
       allowanceCents,
+      allowanceOverrideCents,
       spentCents,
       remainingCents,
       expenseCount: expenses.filter((e) => !e.deletedAt).length,

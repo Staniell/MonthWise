@@ -133,6 +133,32 @@ export function formatDate(dateString: string, locale: string = "en-US"): string
 }
 
 /**
+ * Format a datetime string for display with time (e.g., "Jan 10, 7:15 PM")
+ * SQLite stores datetime in UTC format without timezone indicator.
+ * We append 'Z' to tell JavaScript it's UTC, then convert to local time.
+ */
+export function formatDateTime(dateString: string, locale: string = "en-US"): string {
+  // SQLite datetime format: "2026-01-10 11:15:00" (UTC, no timezone indicator)
+  // We need to tell JavaScript this is UTC by normalizing to ISO format with 'Z'
+  const normalizedString =
+    dateString.includes("T") || dateString.includes("Z") ? dateString : dateString.replace(" ", "T") + "Z";
+  const date = new Date(normalizedString);
+
+  const dateOptions: Intl.DateTimeFormatOptions = {
+    month: "short",
+    day: "numeric",
+  };
+  const timeOptions: Intl.DateTimeFormatOptions = {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  };
+  const datePart = date.toLocaleDateString(locale, dateOptions);
+  const timePart = date.toLocaleTimeString(locale, timeOptions);
+  return `${datePart}, ${timePart}`;
+}
+
+/**
  * Get current date as YYYY-MM-DD string
  */
 export function getCurrentDateString(): string {

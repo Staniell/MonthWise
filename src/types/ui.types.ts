@@ -45,6 +45,7 @@ export interface MonthSummary {
   month: number;
   monthId: number | null;
   allowanceCents: number;
+  allowanceOverrideCents: number | null; // null = using default, number = custom override
   spentCents: number;
   remainingCents: number;
   expenseCount: number;

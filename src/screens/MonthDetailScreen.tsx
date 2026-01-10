@@ -1,25 +1,38 @@
-import { AppText, Button, Card, FAB } from "@/components/common";
+import { AppText, Button, Card, FAB, Input } from "@/components/common";
 import { AddExpenseModal } from "@/components/expense/AddExpenseModal";
 import { ExpenseItem } from "@/components/expense/ExpenseItem";
 import { useAppStore, useUIStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { ExpenseWithCategory } from "@/types";
-import { formatCurrency, formatWithSign, getMonthName } from "@/utils";
+import { formatCurrency, formatForInput, formatWithSign, getMonthName, parseToCents } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Stack, useRouter } from "expo-router";
-import React from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import React, { useState } from "react";
+import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export const MonthDetailScreen = () => {
   const router = useRouter();
-  const { selectedMonthId, selectedMonthExpenses, monthSummaries, categories, clearSelectedMonth, currency } =
-    useAppStore();
+  const {
+    selectedMonthId,
+    selectedMonthExpenses,
+    monthSummaries,
+    categories,
+    clearSelectedMonth,
+    currency,
+    setMonthAllowanceOverride,
+    defaultAllowanceCents,
+  } = useAppStore();
 
   const { showAddExpenseModal, showEditExpenseModal } = useUIStore();
 
   const currentSummary = monthSummaries.find((m) => m.monthId === selectedMonthId);
   const monthName = currentSummary ? getMonthName(currentSummary.month) : "Month Detail";
+
+  // State for allowance editing
+  const [isEditingAllowance, setIsEditingAllowance] = useState(false);
+  const [allowanceInput, setAllowanceInput] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   // Join expenses with categories
   const expensesWithCategories: ExpenseWithCategory[] = selectedMonthExpenses.map((expense) => {
@@ -33,6 +46,42 @@ export const MonthDetailScreen = () => {
     return { ...expense, category };
   });
 
+  const handleAllowancePress = () => {
+    if (!currentSummary) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setAllowanceInput(formatForInput(currentSummary.allowanceCents));
+    setIsEditingAllowance(!isEditingAllowance);
+  };
+
+  const handleSaveAllowance = async () => {
+    if (!currentSummary) return;
+    const cents = parseToCents(allowanceInput);
+    if (cents === null) return;
+
+    setIsSaving(true);
+    try {
+      await setMonthAllowanceOverride(currentSummary.year, currentSummary.month, cents);
+      setIsEditingAllowance(false);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleResetAllowance = async () => {
+    if (!currentSummary) return;
+    setIsSaving(true);
+    try {
+      await setMonthAllowanceOverride(currentSummary.year, currentSummary.month, null);
+      setIsEditingAllowance(false);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const renderHeader = () => {
     if (!currentSummary) return null;
 
@@ -44,6 +93,8 @@ export const MonthDetailScreen = () => {
     let remainingColor: string = colors.textSecondary;
     if (isPositive) remainingColor = colors.success;
     if (isNegative) remainingColor = colors.danger;
+
+    const hasOverride = currentSummary.allowanceOverrideCents !== null;
 
     return (
       <View style={styles.header}>
@@ -58,14 +109,59 @@ export const MonthDetailScreen = () => {
           </View>
 
           <View style={styles.secondaryStats}>
-            <View style={styles.statRow}>
-              <AppText variant="body" color={colors.textMuted}>
-                Allowance
-              </AppText>
-              <AppText variant="bodyMedium">
-                {formatCurrency(currentSummary.allowanceCents, undefined, currency)}
-              </AppText>
-            </View>
+            {/* Tappable Allowance Row */}
+            <TouchableOpacity style={styles.statRow} onPress={handleAllowancePress} activeOpacity={0.7}>
+              <View style={styles.allowanceLabel}>
+                <AppText variant="body" color={colors.textMuted}>
+                  Allowance
+                </AppText>
+                {hasOverride && (
+                  <View style={styles.overrideBadge}>
+                    <AppText variant="caption" color={colors.primaryForeground}>
+                      Custom
+                    </AppText>
+                  </View>
+                )}
+              </View>
+              <View style={styles.allowanceValue}>
+                <AppText variant="bodyMedium">
+                  {formatCurrency(currentSummary.allowanceCents, undefined, currency)}
+                </AppText>
+                <Ionicons name={isEditingAllowance ? "chevron-up" : "chevron-down"} size={16} color={colors.primary} />
+              </View>
+            </TouchableOpacity>
+
+            {/* Expandable Editor */}
+            {isEditingAllowance && (
+              <View style={styles.allowanceEditor}>
+                <Input
+                  placeholder="Custom allowance"
+                  value={allowanceInput}
+                  onChangeText={setAllowanceInput}
+                  keyboardType="numeric"
+                  containerStyle={{ marginBottom: layout.spacing.s }}
+                />
+                <View style={styles.editorButtons}>
+                  <Button title="Save" size="s" onPress={handleSaveAllowance} loading={isSaving} style={{ flex: 1 }} />
+                  {hasOverride && (
+                    <Button
+                      title="Reset"
+                      size="s"
+                      variant="secondary"
+                      onPress={handleResetAllowance}
+                      loading={isSaving}
+                      style={{ flex: 1 }}
+                    />
+                  )}
+                </View>
+                {hasOverride && (
+                  <AppText variant="caption" color={colors.textMuted} style={{ marginTop: layout.spacing.xs }}>
+                    Default: {formatCurrency(defaultAllowanceCents, undefined, currency)}
+                  </AppText>
+                )}
+              </View>
+            )}
+
             <View style={styles.statRow}>
               <AppText variant="body" color={colors.textMuted}>
                 Spent
@@ -169,6 +265,33 @@ const styles = StyleSheet.create({
   statRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
+  },
+  allowanceLabel: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: layout.spacing.s,
+  },
+  allowanceValue: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: layout.spacing.xs,
+  },
+  overrideBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: layout.spacing.xs,
+    paddingVertical: 2,
+    borderRadius: layout.borderRadius.s,
+  },
+  allowanceEditor: {
+    backgroundColor: colors.background,
+    padding: layout.spacing.m,
+    borderRadius: layout.borderRadius.m,
+    marginTop: layout.spacing.s,
+  },
+  editorButtons: {
+    flexDirection: "row",
+    gap: layout.spacing.s,
   },
   listHeader: {
     flexDirection: "row",

@@ -2,7 +2,7 @@ import { AppText } from "@/components/common";
 import { useAppStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import type { ExpenseWithCategory } from "@/types";
-import { formatCurrency, formatDate } from "@/utils";
+import { formatCurrency, formatDateTime } from "@/utils";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
@@ -38,7 +38,10 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onPress, onLo
 
         <View style={styles.bottomRow}>
           <AppText variant="caption" color={colors.textMuted} numberOfLines={1} style={styles.note}>
-            {expense.note ? expense.note : formatDate(expense.expenseDate)}
+            {expense.note || ""}
+          </AppText>
+          <AppText variant="caption" color={colors.textMuted}>
+            {formatDateTime(expense.createdAt)}
           </AppText>
         </View>
       </View>

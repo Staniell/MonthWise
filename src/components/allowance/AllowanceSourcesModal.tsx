@@ -1,21 +1,33 @@
 import { AppText, Button, Card, Input } from "@/components/common";
 import { useAppStore, useUIStore } from "@/stores";
 import { colors, layout } from "@/theme";
-import { AllowanceSource } from "@/types";
-import { formatCurrency, formatForInput, parseToCents } from "@/utils";
+import { AllowanceSource, MonthSummary } from "@/types";
+import { formatCurrency, formatForInput, getMonthName, parseToCents } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { FlatList, Modal, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 
 export const AllowanceSourcesModal = () => {
   const { isAllowanceSourcesModalVisible, hideAllowanceSourcesModal } = useUIStore();
-  const { allowanceSources, addAllowanceSource, updateAllowanceSource, deleteAllowanceSource, currency, selectedYear } =
-    useAppStore();
+  const {
+    allowanceSources,
+    addAllowanceSource,
+    updateAllowanceSource,
+    deleteAllowanceSource,
+    currency,
+    selectedYear,
+    monthSummaries,
+  } = useAppStore();
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Get months with custom overrides for the selected year
+  const monthsWithOverrides = monthSummaries.filter(
+    (m) => m.year === selectedYear && m.allowanceOverrideCents !== null
+  );
 
   const handleEdit = (source: AllowanceSource) => {
     setName(source.name);
@@ -78,14 +90,29 @@ export const AllowanceSourcesModal = () => {
     </View>
   );
 
+  const renderOverrideItem = ({ item }: { item: MonthSummary }) => (
+    <View style={styles.overrideItem}>
+      <View style={styles.overrideInfo}>
+        <AppText variant="bodyMedium">{getMonthName(item.month)}</AppText>
+        <View style={styles.overrideBadge}>
+          <AppText variant="caption" color={colors.primaryForeground}>
+            Custom
+          </AppText>
+        </View>
+      </View>
+      <AppText variant="body">{formatCurrency(item.allowanceOverrideCents!, undefined, currency)}</AppText>
+    </View>
+  );
+
   if (!isAllowanceSourcesModalVisible) return null;
 
   return (
     <Modal animationType="slide" transparent={true} visible={true} onRequestClose={hideAllowanceSourcesModal}>
-      <TouchableWithoutFeedback onPress={hideAllowanceSourcesModal}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <Card style={styles.modalContent}>
+      <View style={styles.overlay}>
+        <TouchableWithoutFeedback onPress={hideAllowanceSourcesModal}>
+          <View style={StyleSheet.absoluteFill} />
+        </TouchableWithoutFeedback>
+        <Card style={styles.modalContent}>
               <View style={styles.header}>
                 <AppText variant="heading3">Allowance Sources</AppText>
                 <TouchableOpacity
@@ -96,50 +123,87 @@ export const AllowanceSourcesModal = () => {
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.form}>
-                <Input
-                  placeholder="Source Name (e.g. Salary)"
-                  value={name}
-                  onChangeText={setName}
-                  style={{ marginBottom: layout.spacing.s }}
-                />
-                <View style={styles.amountRow}>
+              <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <View style={styles.form}>
                   <Input
-                    placeholder="Amount"
-                    value={amount}
-                    onChangeText={setAmount}
-                    keyboardType="numeric"
-                    style={{ flex: 1 }}
-                    containerStyle={{ marginBottom: 0, flex: 1 }}
+                    placeholder="Source Name (e.g. Salary)"
+                    value={name}
+                    onChangeText={setName}
+                    style={{ marginBottom: layout.spacing.s }}
                   />
+                  <View style={styles.amountRow}>
+                    <Input
+                      placeholder="Amount"
+                      value={amount}
+                      onChangeText={setAmount}
+                      keyboardType="numeric"
+                      style={{ flex: 1 }}
+                      containerStyle={{ marginBottom: 0, flex: 1 }}
+                    />
+                  </View>
+                  <Button
+                    title={editingId ? "Update" : "Add"}
+                    onPress={handleSubmit}
+                    loading={loading}
+                    disabled={!name || !amount}
+                    style={styles.addButton}
+                  />
+                  {editingId && (
+                    <TouchableOpacity onPress={handleReset}>
+                      <AppText variant="caption" color={colors.textMuted} align="right" style={{ marginTop: 4 }}>
+                        Cancel Edit
+                      </AppText>
+                    </TouchableOpacity>
+                  )}
                 </View>
-                <Button
-                  title={editingId ? "Update" : "Add"}
-                  onPress={handleSubmit}
-                  loading={loading}
-                  disabled={!name || !amount}
-                  style={styles.addButton}
-                />
-                {editingId && (
-                  <TouchableOpacity onPress={handleReset}>
-                    <AppText variant="caption" color={colors.textMuted} align="right" style={{ marginTop: 4 }}>
-                      Cancel Edit
-                    </AppText>
-                  </TouchableOpacity>
-                )}
-              </View>
 
-              <FlatList
-                data={allowanceSources.filter((s) => !s.deletedAt)}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderItem}
-                style={styles.list}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
-              />
-            </Card>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
+                {/* Source List */}
+                <AppText variant="caption" color={colors.textMuted} style={styles.sectionLabel}>
+                  Monthly Income ({selectedYear})
+                </AppText>
+                {allowanceSources
+                  .filter((s) => !s.deletedAt)
+                  .map((item) => (
+                    <View key={item.id}>
+                      {renderItem({ item })}
+                      <View style={styles.separator} />
+                    </View>
+                  ))}
+                {allowanceSources.filter((s) => !s.deletedAt).length === 0 && (
+                  <AppText
+                    variant="body"
+                    color={colors.textMuted}
+                    align="center"
+                    style={{ paddingVertical: layout.spacing.l }}
+                  >
+                    No income sources yet
+                  </AppText>
+                )}
+
+                {/* Monthly Overrides Section */}
+                {monthsWithOverrides.length > 0 && (
+                  <>
+                    <AppText
+                      variant="caption"
+                      color={colors.textMuted}
+                      style={[styles.sectionLabel, { marginTop: layout.spacing.l }]}
+                    >
+                      Monthly Overrides ({selectedYear})
+                    </AppText>
+                    <AppText variant="caption" color={colors.textMuted} style={{ marginBottom: layout.spacing.s }}>
+                      These months have custom allowance values that differ from the default.
+                    </AppText>
+                    {monthsWithOverrides.map((item) => (
+                      <View key={`${item.year}-${item.month}`}>
+                        {renderOverrideItem({ item })}
+                        <View style={styles.separator} />
+                      </View>
+                    ))}
+                  </>
+                )}
+              </ScrollView>
+        </Card>
+      </View>
     </Modal>
   );
 };
@@ -155,7 +219,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: layout.borderRadius.xl,
     borderTopRightRadius: layout.borderRadius.xl,
     padding: layout.spacing.l,
-    height: "70%",
+    height: "75%",
   },
   header: {
     flexDirection: "row",
@@ -163,19 +227,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: layout.spacing.l,
   },
+  scrollContent: {
+    flex: 1,
+  },
   form: {
     marginBottom: layout.spacing.l,
   },
   amountRow: {
     flexDirection: "row",
-    alignItems: "flex-start", // Align top since Input has margin
+    alignItems: "flex-start",
     gap: layout.spacing.s,
   },
   addButton: {
     marginTop: layout.spacing.s,
   },
-  list: {
-    flex: 1,
+  sectionLabel: {
+    marginBottom: layout.spacing.s,
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
   itemContainer: {
     flexDirection: "row",
@@ -196,5 +265,22 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: colors.separator,
+  },
+  overrideItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: layout.spacing.m,
+  },
+  overrideInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: layout.spacing.s,
+  },
+  overrideBadge: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: layout.spacing.xs,
+    paddingVertical: 2,
+    borderRadius: layout.borderRadius.s,
   },
 });

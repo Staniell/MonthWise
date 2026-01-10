@@ -9,7 +9,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { View } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/common";
 import { getDatabase } from "@/database";
@@ -56,30 +56,32 @@ export default function RootLayout() {
 
   // Application Root
   return (
-    <ErrorBoundary>
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <StatusBar style="light" backgroundColor={colors.background} />
-        <Stack
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: colors.background,
-            },
-            headerTintColor: colors.text,
-            headerTitleStyle: {
-              fontFamily: "Outfit_600SemiBold",
-              color: colors.text,
-            },
-            headerShadowVisible: false, // Minimalist look
-            contentStyle: {
-              backgroundColor: colors.background,
-            },
-            animation: "slide_from_right", // Elegant transition
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-      </View>
-    </ErrorBoundary>
+    <SafeAreaProvider>
+      <ErrorBoundary>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["bottom"]}>
+          <StatusBar style="light" backgroundColor={colors.background} />
+          <Stack
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: colors.background,
+              },
+              headerTintColor: colors.text,
+              headerTitleStyle: {
+                fontFamily: "Outfit_600SemiBold",
+                color: colors.text,
+              },
+              headerShadowVisible: false, // Minimalist look
+              contentStyle: {
+                backgroundColor: colors.background,
+              },
+              animation: "slide_from_right", // Elegant transition
+            }}
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </SafeAreaView>
+      </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }

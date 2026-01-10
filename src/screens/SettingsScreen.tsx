@@ -4,7 +4,7 @@ import { useAppStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export const SettingsScreen = () => {
   const [exporting, setExporting] = useState(false);
@@ -54,7 +54,7 @@ export const SettingsScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <AppText variant="display" style={styles.title}>
         Settings
       </AppText>
@@ -121,7 +121,7 @@ export const SettingsScreen = () => {
           <AppText variant="bodyMedium">1.0.0</AppText>
         </View>
       </Card>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -129,7 +129,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  contentContainer: {
     padding: layout.spacing.m,
+    paddingBottom: layout.spacing.xxl,
   },
   title: {
     marginBottom: layout.spacing.l,
