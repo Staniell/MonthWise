@@ -74,6 +74,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // --- Navigation ---
   setSelectedYear: (year: number) => {
+    const MIN_YEAR = 2026;
+    const MAX_YEAR = 2030;
+    if (year < MIN_YEAR || year > MAX_YEAR) return;
     set({ selectedYear: year });
     get().loadYearData(year);
   },
@@ -115,6 +118,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   loadYearData: async (year: number) => {
+    if (get().isLoading) return; // Prevent concurrent loads
     set({ isLoading: true });
     try {
       // Load allowance sources

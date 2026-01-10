@@ -10,7 +10,15 @@ interface FABProps extends TouchableOpacityProps {
 
 export const FAB: React.FC<FABProps> = ({ onPress, icon = "add", style, ...props }) => {
   return (
-    <TouchableOpacity style={[styles.fab, style]} onPress={onPress} activeOpacity={0.8} {...props}>
+    <TouchableOpacity
+      style={[styles.fab, style]}
+      onPress={onPress}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel="Add Expense"
+      accessibilityHint="Opens the add expense modal"
+      {...props}
+    >
       <Ionicons name={icon} size={32} color={colors.primaryForeground} />
     </TouchableOpacity>
   );

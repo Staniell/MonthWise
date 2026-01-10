@@ -5,6 +5,7 @@ import { useAppStore, useUIStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { formatCurrency, formatWithSign } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
@@ -28,11 +29,13 @@ export const YearOverviewScreen = () => {
   }, [selectedYear]);
 
   const handleMonthPress = (month: number) => {
+    Haptics.selectionAsync();
     selectMonth(selectedYear, month);
     router.push("/month-detail" as any);
   };
 
   const handleYearChange = (increment: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedYear(selectedYear + increment);
   };
 
@@ -46,8 +49,12 @@ export const YearOverviewScreen = () => {
       <View style={styles.header}>
         {/* Year Selector */}
         <View style={styles.yearSelector}>
-          <TouchableOpacity onPress={() => handleYearChange(-1)} style={styles.yearButton}>
-            <Ionicons name="chevron-back" size={24} color={colors.primary} />
+          <TouchableOpacity
+            onPress={() => handleYearChange(-1)}
+            style={styles.yearButton}
+            disabled={selectedYear <= 2026}
+          >
+            <Ionicons name="chevron-back" size={24} color={selectedYear <= 2026 ? colors.textMuted : colors.primary} />
           </TouchableOpacity>
           <AppText variant="display" color={colors.primary}>
             {selectedYear}
@@ -84,7 +91,12 @@ export const YearOverviewScreen = () => {
       <FlatList
         data={monthSummaries}
         keyExtractor={(item) => item.month.toString()}
-        renderItem={({ item }) => <MonthCard summary={item} onPress={() => handleMonthPress(item.month)} />}
+        renderItem={({ item }) => {
+          const currentMonth = new Date().getMonth() + 1;
+          const isNearCurrent = item.month >= currentMonth - 1 && item.month <= currentMonth + 1;
+          const dimmed = selectedYear === 2026 && !isNearCurrent;
+          return <MonthCard summary={item} onPress={() => handleMonthPress(item.month)} dimmed={dimmed} />;
+        }}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}

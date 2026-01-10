@@ -4,6 +4,7 @@ import { colors, layout } from "@/theme";
 import { CreateExpenseDTO, UpdateExpenseDTO } from "@/types";
 import { formatForInput, parseToCents } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
 import {
   Keyboard,
@@ -74,6 +75,7 @@ export const AddExpenseModal = () => {
         await addExpense(createDto);
       }
       hideExpenseModal();
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error(error);
     } finally {
@@ -87,6 +89,7 @@ export const AddExpenseModal = () => {
     try {
       await deleteExpense(editingExpenseId);
       hideExpenseModal();
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error(error);
     } finally {

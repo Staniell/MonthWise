@@ -7,6 +7,7 @@ import { ExpenseWithCategory } from "@/types";
 import { formatCurrency, formatWithSign, getMonthName } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { FlashList } from "@shopify/flash-list";
+import * as Haptics from "expo-haptics";
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
@@ -107,7 +108,18 @@ export const MonthDetailScreen = () => {
       <FlashList
         data={expensesWithCategories}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <ExpenseItem expense={item} onPress={() => showEditExpenseModal(item.id)} />}
+        renderItem={({ item }) => (
+          <ExpenseItem
+            expense={item}
+            onPress={() => {
+              showEditExpenseModal(item.id);
+            }}
+            onLongPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              showEditExpenseModal(item.id);
+            }}
+          />
+        )}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={
           <View style={styles.emptyState}>

@@ -8,11 +8,18 @@ import { StyleSheet, TouchableOpacity, View } from "react-native";
 interface ExpenseItemProps {
   expense: ExpenseWithCategory;
   onPress?: () => void;
+  onLongPress?: () => void;
 }
 
-export const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onPress }) => {
+export const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onPress, onLongPress }) => {
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7} disabled={!onPress}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      activeOpacity={0.7}
+      disabled={!onPress}
+    >
       <View style={[styles.iconContainer, { backgroundColor: expense.category.color || colors.border }]}>
         <AppText style={styles.icon}>{expense.category.icon || "💰"}</AppText>
       </View>

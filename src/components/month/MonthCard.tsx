@@ -9,9 +9,10 @@ import { StyleSheet, TouchableOpacity, View } from "react-native";
 interface MonthCardProps {
   summary: MonthSummary;
   onPress: () => void;
+  dimmed?: boolean;
 }
 
-export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress }) => {
+export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress, dimmed = false }) => {
   const { isPositive, isNegative, text: remainingText } = formatWithSign(summary.remainingCents);
 
   let statusColor: string = colors.textMuted;
@@ -25,7 +26,7 @@ export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress }) => {
   const progressBarColor: string = isNegative ? colors.danger : colors.primary;
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={dimmed ? { opacity: 0.4 } : undefined}>
       <Card style={styles.container}>
         <View style={styles.header}>
           <AppText variant="heading3" style={styles.monthName}>
