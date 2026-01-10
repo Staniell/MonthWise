@@ -20,6 +20,7 @@ export const MonthDetailScreen = () => {
     categories,
     clearSelectedMonth,
     currency,
+    hideCents,
     setMonthAllowanceOverride,
     defaultAllowanceCents,
   } = useAppStore();
@@ -89,7 +90,7 @@ export const MonthDetailScreen = () => {
       text: remainingText,
       isPositive,
       isNegative,
-    } = formatWithSign(currentSummary.remainingCents, undefined, currency);
+    } = formatWithSign(currentSummary.remainingCents, undefined, currency, hideCents);
     let remainingColor: string = colors.textSecondary;
     if (isPositive) remainingColor = colors.success;
     if (isNegative) remainingColor = colors.danger;
@@ -125,7 +126,7 @@ export const MonthDetailScreen = () => {
               </View>
               <View style={styles.allowanceValue}>
                 <AppText variant="bodyMedium">
-                  {formatCurrency(currentSummary.allowanceCents, undefined, currency)}
+                  {formatCurrency(currentSummary.allowanceCents, undefined, currency, hideCents)}
                 </AppText>
                 <Ionicons name={isEditingAllowance ? "chevron-up" : "chevron-down"} size={16} color={colors.primary} />
               </View>
@@ -156,7 +157,7 @@ export const MonthDetailScreen = () => {
                 </View>
                 {hasOverride && (
                   <AppText variant="caption" color={colors.textMuted} style={{ marginTop: layout.spacing.xs }}>
-                    Default: {formatCurrency(defaultAllowanceCents, undefined, currency)}
+                    Default: {formatCurrency(defaultAllowanceCents, undefined, currency, hideCents)}
                   </AppText>
                 )}
               </View>
@@ -166,7 +167,9 @@ export const MonthDetailScreen = () => {
               <AppText variant="body" color={colors.textMuted}>
                 Spent
               </AppText>
-              <AppText variant="bodyMedium">{formatCurrency(currentSummary.spentCents, undefined, currency)}</AppText>
+              <AppText variant="bodyMedium">
+                {formatCurrency(currentSummary.spentCents, undefined, currency, hideCents)}
+              </AppText>
             </View>
           </View>
         </Card>

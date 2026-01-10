@@ -26,6 +26,7 @@ interface AppState {
   categories: Category[];
   monthSummaries: MonthSummary[];
   currency: string;
+  hideCents: boolean;
 
   // Current month detail view
   selectedMonthId: number | null;
@@ -67,6 +68,7 @@ interface AppState {
 
   // --- Actions: Settings ---
   setCurrency: (currency: string) => Promise<void>;
+  setHideCents: (hideCents: boolean) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -76,6 +78,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   categories: [],
   monthSummaries: [],
   currency: "USD",
+  hideCents: false,
   selectedMonthId: null,
   selectedMonthExpenses: [],
   isLoading: false,
@@ -127,6 +130,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       const savedCurrency = await SettingsRepository.get("currency");
       if (savedCurrency) {
         set({ currency: savedCurrency });
+      }
+
+      // Load hideCents preference
+      const savedHideCents = await SettingsRepository.get("hideCents");
+      if (savedHideCents) {
+        set({ hideCents: savedHideCents === "true" });
       }
 
       await get().loadYearData(get().selectedYear);
@@ -256,5 +265,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   setCurrency: async (currency: string) => {
     set({ currency });
     await SettingsRepository.set("currency", currency);
+  },
+
+  setHideCents: async (hideCents: boolean) => {
+    set({ hideCents });
+    await SettingsRepository.set("hideCents", hideCents ? "true" : "false");
   },
 }));

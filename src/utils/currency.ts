@@ -8,14 +8,20 @@
  * @param cents - Amount in cents (e.g., 1050 = $10.50)
  * @param locale - User locale for formatting (default: 'en-US')
  * @param currency - Currency code (default: 'USD')
+ * @param hideCents - Whether to hide decimal places (default: false)
  */
-export function formatCurrency(cents: number, locale: string = "en-US", currency: string = "USD"): string {
+export function formatCurrency(
+  cents: number,
+  locale: string = "en-US",
+  currency: string = "USD",
+  hideCents: boolean = false
+): string {
   const amount = cents / 100;
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: hideCents ? 0 : 2,
+    maximumFractionDigits: hideCents ? 0 : 2,
   }).format(amount);
 }
 
@@ -90,16 +96,18 @@ export function parseToCents(input: string): number | null {
  * @param cents - Amount in cents (can be negative)
  * @param locale - User locale
  * @param currency - Currency code
+ * @param hideCents - Whether to hide decimal places
  */
 export function formatWithSign(
   cents: number,
   locale: string = "en-US",
-  currency: string = "USD"
+  currency: string = "USD",
+  hideCents: boolean = false
 ): { text: string; isPositive: boolean; isNegative: boolean } {
   const isPositive = cents > 0;
   const isNegative = cents < 0;
   const prefix = isPositive ? "+" : "";
-  const text = prefix + formatCurrency(cents, locale, currency);
+  const text = prefix + formatCurrency(cents, locale, currency, hideCents);
 
   return { text, isPositive, isNegative };
 }

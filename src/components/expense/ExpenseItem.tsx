@@ -14,6 +14,7 @@ interface ExpenseItemProps {
 
 export const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onPress, onLongPress }) => {
   const currency = useAppStore((state) => state.currency);
+  const hideCents = useAppStore((state) => state.hideCents);
   return (
     <TouchableOpacity
       style={styles.container}
@@ -32,7 +33,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onPress, onLo
             {expense.category.name}
           </AppText>
           <AppText variant="bodyMedium" color={colors.text}>
-            {formatCurrency(expense.amountCents, undefined, currency)}
+            {formatCurrency(expense.amountCents, undefined, currency, hideCents)}
           </AppText>
         </View>
 

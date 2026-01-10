@@ -4,7 +4,7 @@ import { useAppStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 
 export const SettingsScreen = () => {
   const [exporting, setExporting] = useState(false);
@@ -12,6 +12,8 @@ export const SettingsScreen = () => {
   const refreshData = useAppStore((state) => state.refreshData);
   const currency = useAppStore((state) => state.currency);
   const setCurrency = useAppStore((state) => state.setCurrency);
+  const hideCents = useAppStore((state) => state.hideCents);
+  const setHideCents = useAppStore((state) => state.setHideCents);
 
   const handleExport = async () => {
     setExporting(true);
@@ -108,6 +110,23 @@ export const SettingsScreen = () => {
             </TouchableOpacity>
           ))}
         </View>
+
+        <View style={styles.toggleRow}>
+          <View>
+            <AppText variant="body" color={colors.textMuted}>
+              Hide Cents
+            </AppText>
+            <AppText variant="caption" color={colors.textMuted}>
+              Show whole numbers only
+            </AppText>
+          </View>
+          <Switch
+            value={hideCents}
+            onValueChange={setHideCents}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={colors.card}
+          />
+        </View>
       </Card>
 
       <Card style={styles.section}>
@@ -173,5 +192,14 @@ const styles = StyleSheet.create({
   currencyButtonActive: {
     backgroundColor: colors.primary,
     borderColor: colors.primary,
+  },
+  toggleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: layout.spacing.l,
+    paddingTop: layout.spacing.l,
+    borderTopWidth: 1,
+    borderTopColor: colors.separator,
   },
 });

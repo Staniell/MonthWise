@@ -15,6 +15,7 @@ interface MonthCardProps {
 
 export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress, dimmed = false }) => {
   const currency = useAppStore((state) => state.currency);
+  const hideCents = useAppStore((state) => state.hideCents);
   const selectedYear = useAppStore((state) => state.selectedYear);
 
   // Determine if this month is in the future
@@ -25,7 +26,11 @@ export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress, dimmed =
 
   // For future months, show 0 remaining
   const displayRemaining = isFutureMonth ? 0 : summary.remainingCents;
-  const { isPositive, isNegative, text: remainingText } = formatWithSign(displayRemaining, undefined, currency);
+  const {
+    isPositive,
+    isNegative,
+    text: remainingText,
+  } = formatWithSign(displayRemaining, undefined, currency, hideCents);
 
   let statusColor: string = colors.textMuted;
   if (isPositive) statusColor = colors.success;
@@ -60,7 +65,7 @@ export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress, dimmed =
             <AppText variant="caption" color={colors.textMuted}>
               Spent
             </AppText>
-            <AppText variant="bodyMedium">{formatCurrency(summary.spentCents, undefined, currency)}</AppText>
+            <AppText variant="bodyMedium">{formatCurrency(summary.spentCents, undefined, currency, hideCents)}</AppText>
           </View>
         </View>
 

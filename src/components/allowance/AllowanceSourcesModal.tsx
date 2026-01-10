@@ -15,6 +15,7 @@ export const AllowanceSourcesModal = () => {
     updateAllowanceSource,
     deleteAllowanceSource,
     currency,
+    hideCents,
     selectedYear,
     monthSummaries,
   } = useAppStore();
@@ -77,7 +78,7 @@ export const AllowanceSourcesModal = () => {
     <View style={styles.itemContainer}>
       <View style={styles.itemInfo}>
         <AppText variant="bodyMedium">{item.name}</AppText>
-        <AppText variant="body">{formatCurrency(item.amountCents, undefined, currency)}</AppText>
+        <AppText variant="body">{formatCurrency(item.amountCents, undefined, currency, hideCents)}</AppText>
       </View>
       <View style={styles.itemActions}>
         <TouchableOpacity onPress={() => handleEdit(item)} style={styles.iconButton}>
@@ -100,7 +101,7 @@ export const AllowanceSourcesModal = () => {
           </AppText>
         </View>
       </View>
-      <AppText variant="body">{formatCurrency(item.allowanceOverrideCents!, undefined, currency)}</AppText>
+      <AppText variant="body">{formatCurrency(item.allowanceOverrideCents!, undefined, currency, hideCents)}</AppText>
     </View>
   );
 
@@ -113,95 +114,95 @@ export const AllowanceSourcesModal = () => {
           <View style={StyleSheet.absoluteFill} />
         </TouchableWithoutFeedback>
         <Card style={styles.modalContent}>
-              <View style={styles.header}>
-                <AppText variant="heading3">Allowance Sources</AppText>
-                <TouchableOpacity
-                  onPress={hideAllowanceSourcesModal}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Ionicons name="close" size={24} color={colors.danger} />
-                </TouchableOpacity>
+          <View style={styles.header}>
+            <AppText variant="heading3">Allowance Sources</AppText>
+            <TouchableOpacity
+              onPress={hideAllowanceSourcesModal}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close" size={24} color={colors.danger} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.form}>
+              <Input
+                placeholder="Source Name (e.g. Salary)"
+                value={name}
+                onChangeText={setName}
+                style={{ marginBottom: layout.spacing.s }}
+              />
+              <View style={styles.amountRow}>
+                <Input
+                  placeholder="Amount"
+                  value={amount}
+                  onChangeText={setAmount}
+                  keyboardType="numeric"
+                  style={{ flex: 1 }}
+                  containerStyle={{ marginBottom: 0, flex: 1 }}
+                />
               </View>
-
-              <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                <View style={styles.form}>
-                  <Input
-                    placeholder="Source Name (e.g. Salary)"
-                    value={name}
-                    onChangeText={setName}
-                    style={{ marginBottom: layout.spacing.s }}
-                  />
-                  <View style={styles.amountRow}>
-                    <Input
-                      placeholder="Amount"
-                      value={amount}
-                      onChangeText={setAmount}
-                      keyboardType="numeric"
-                      style={{ flex: 1 }}
-                      containerStyle={{ marginBottom: 0, flex: 1 }}
-                    />
-                  </View>
-                  <Button
-                    title={editingId ? "Update" : "Add"}
-                    onPress={handleSubmit}
-                    loading={loading}
-                    disabled={!name || !amount}
-                    style={styles.addButton}
-                  />
-                  {editingId && (
-                    <TouchableOpacity onPress={handleReset}>
-                      <AppText variant="caption" color={colors.textMuted} align="right" style={{ marginTop: 4 }}>
-                        Cancel Edit
-                      </AppText>
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* Source List */}
-                <AppText variant="caption" color={colors.textMuted} style={styles.sectionLabel}>
-                  Monthly Income ({selectedYear})
-                </AppText>
-                {allowanceSources
-                  .filter((s) => !s.deletedAt)
-                  .map((item) => (
-                    <View key={item.id}>
-                      {renderItem({ item })}
-                      <View style={styles.separator} />
-                    </View>
-                  ))}
-                {allowanceSources.filter((s) => !s.deletedAt).length === 0 && (
-                  <AppText
-                    variant="body"
-                    color={colors.textMuted}
-                    align="center"
-                    style={{ paddingVertical: layout.spacing.l }}
-                  >
-                    No income sources yet
+              <Button
+                title={editingId ? "Update" : "Add"}
+                onPress={handleSubmit}
+                loading={loading}
+                disabled={!name || !amount}
+                style={styles.addButton}
+              />
+              {editingId && (
+                <TouchableOpacity onPress={handleReset}>
+                  <AppText variant="caption" color={colors.textMuted} align="right" style={{ marginTop: 4 }}>
+                    Cancel Edit
                   </AppText>
-                )}
+                </TouchableOpacity>
+              )}
+            </View>
 
-                {/* Monthly Overrides Section */}
-                {monthsWithOverrides.length > 0 && (
-                  <>
-                    <AppText
-                      variant="caption"
-                      color={colors.textMuted}
-                      style={[styles.sectionLabel, { marginTop: layout.spacing.l }]}
-                    >
-                      Monthly Overrides ({selectedYear})
-                    </AppText>
-                    <AppText variant="caption" color={colors.textMuted} style={{ marginBottom: layout.spacing.s }}>
-                      These months have custom allowance values that differ from the default.
-                    </AppText>
-                    {monthsWithOverrides.map((item) => (
-                      <View key={`${item.year}-${item.month}`}>
-                        {renderOverrideItem({ item })}
-                        <View style={styles.separator} />
-                      </View>
-                    ))}
-                  </>
-                )}
-              </ScrollView>
+            {/* Source List */}
+            <AppText variant="caption" color={colors.textMuted} style={styles.sectionLabel}>
+              Monthly Income ({selectedYear})
+            </AppText>
+            {allowanceSources
+              .filter((s) => !s.deletedAt)
+              .map((item) => (
+                <View key={item.id}>
+                  {renderItem({ item })}
+                  <View style={styles.separator} />
+                </View>
+              ))}
+            {allowanceSources.filter((s) => !s.deletedAt).length === 0 && (
+              <AppText
+                variant="body"
+                color={colors.textMuted}
+                align="center"
+                style={{ paddingVertical: layout.spacing.l }}
+              >
+                No income sources yet
+              </AppText>
+            )}
+
+            {/* Monthly Overrides Section */}
+            {monthsWithOverrides.length > 0 && (
+              <>
+                <AppText
+                  variant="caption"
+                  color={colors.textMuted}
+                  style={[styles.sectionLabel, { marginTop: layout.spacing.l }]}
+                >
+                  Monthly Overrides ({selectedYear})
+                </AppText>
+                <AppText variant="caption" color={colors.textMuted} style={{ marginBottom: layout.spacing.s }}>
+                  These months have custom allowance values that differ from the default.
+                </AppText>
+                {monthsWithOverrides.map((item) => (
+                  <View key={`${item.year}-${item.month}`}>
+                    {renderOverrideItem({ item })}
+                    <View style={styles.separator} />
+                  </View>
+                ))}
+              </>
+            )}
+          </ScrollView>
         </Card>
       </View>
     </Modal>
