@@ -6,11 +6,10 @@ import { colors, layout } from "@/theme";
 import { ExpenseWithCategory } from "@/types";
 import { formatCurrency, formatWithSign, getMonthName } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
-import { FlashList } from "@shopify/flash-list";
 import * as Haptics from "expo-haptics";
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
 
 export const MonthDetailScreen = () => {
   const router = useRouter();
@@ -90,6 +89,7 @@ export const MonthDetailScreen = () => {
       <Stack.Screen
         options={{
           title: monthName,
+          headerTitleAlign: "center",
           headerLeft: () => (
             <Button
               title="Back"
@@ -105,7 +105,7 @@ export const MonthDetailScreen = () => {
         }}
       />
 
-      <FlashList
+      <FlatList
         data={expensesWithCategories}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (

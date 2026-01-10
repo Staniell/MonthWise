@@ -26,8 +26,8 @@ export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress, dimmed =
   const progressBarColor: string = isNegative ? colors.danger : colors.primary;
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={dimmed ? { opacity: 0.4 } : undefined}>
-      <Card style={styles.container}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Card style={[styles.container, dimmed && { opacity: 0.4 }]}>
         <View style={styles.header}>
           <AppText variant="heading3" style={styles.monthName}>
             {getMonthName(summary.month)}

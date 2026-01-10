@@ -3,6 +3,7 @@ import { runMigrations } from "./migrations";
 import { CREATE_TABLES, SCHEMA_VERSION } from "./schema";
 
 let database: SQLite.SQLiteDatabase | null = null;
+let initPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 /**
  * Default expense categories with icons and colors
@@ -23,15 +24,33 @@ const DEFAULT_CATEGORIES = [
 
 /**
  * Get the database instance, initializing if needed
+ * Uses a promise lock to prevent concurrent initialization
  */
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
+  // Already initialized
   if (database) {
     return database;
   }
 
-  database = await SQLite.openDatabaseAsync("monthwise.db");
-  await initializeDatabase(database);
-  return database;
+  // Initialization in progress - wait for it
+  if (initPromise) {
+    return initPromise;
+  }
+
+  // Start initialization
+  initPromise = (async () => {
+    try {
+      const db = await SQLite.openDatabaseAsync("monthwise.db");
+      await initializeDatabase(db);
+      database = db;
+      return db;
+    } catch (error) {
+      initPromise = null; // Reset on error so retry is possible
+      throw error;
+    }
+  })();
+
+  return initPromise;
 }
 
 /**
@@ -41,6 +60,7 @@ export async function closeDatabase(): Promise<void> {
   if (database) {
     await database.closeAsync();
     database = null;
+    initPromise = null;
   }
 }
 
@@ -121,6 +141,7 @@ export async function resetDatabase(): Promise<void> {
   if (database) {
     await database.closeAsync();
     database = null;
+    initPromise = null;
   }
 
   await SQLite.deleteDatabaseAsync("monthwise.db");

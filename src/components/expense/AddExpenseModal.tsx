@@ -108,13 +108,9 @@ export const AddExpenseModal = () => {
               <Card style={styles.modalContent}>
                 <View style={styles.header}>
                   <AppText variant="heading3">{isEditing ? "Edit Expense" : "New Expense"}</AppText>
-                  <Button
-                    title="Close"
-                    variant="ghost"
-                    size="s"
-                    onPress={hideExpenseModal}
-                    icon={<Ionicons name="close" size={24} color={colors.text} />}
-                  />
+                  <TouchableOpacity onPress={hideExpenseModal} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Ionicons name="close" size={24} color={colors.danger} />
+                  </TouchableOpacity>
                 </View>
 
                 <Input

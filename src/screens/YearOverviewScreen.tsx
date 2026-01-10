@@ -92,9 +92,16 @@ export const YearOverviewScreen = () => {
         data={monthSummaries}
         keyExtractor={(item) => item.month.toString()}
         renderItem={({ item }) => {
-          const currentMonth = new Date().getMonth() + 1;
-          const isNearCurrent = item.month >= currentMonth - 1 && item.month <= currentMonth + 1;
-          const dimmed = selectedYear === 2026 && !isNearCurrent;
+          const now = new Date();
+          const currentYear = now.getFullYear();
+          const currentMonth = now.getMonth() + 1;
+
+          // Calculate distance in months
+          const monthDiff = (selectedYear - currentYear) * 12 + (item.month - currentMonth);
+
+          // Only current, previous, and next months are NOT dimmed
+          const dimmed = Math.abs(monthDiff) > 1;
+
           return <MonthCard summary={item} onPress={() => handleMonthPress(item.month)} dimmed={dimmed} />;
         }}
         ListHeaderComponent={renderHeader}

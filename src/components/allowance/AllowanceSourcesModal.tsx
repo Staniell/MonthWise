@@ -87,13 +87,12 @@ export const AllowanceSourcesModal = () => {
             <Card style={styles.modalContent}>
               <View style={styles.header}>
                 <AppText variant="heading3">Allowance Sources</AppText>
-                <Button
-                  title="Close"
-                  variant="ghost"
-                  size="s"
+                <TouchableOpacity
                   onPress={hideAllowanceSourcesModal}
-                  icon={<Ionicons name="close" size={24} color={colors.text} />}
-                />
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons name="close" size={24} color={colors.danger} />
+                </TouchableOpacity>
               </View>
 
               <View style={styles.form}>
@@ -112,14 +111,14 @@ export const AllowanceSourcesModal = () => {
                     style={{ flex: 1 }}
                     containerStyle={{ marginBottom: 0, flex: 1 }}
                   />
-                  <Button
-                    title={editingId ? "Update" : "Add"}
-                    onPress={handleSubmit}
-                    loading={loading}
-                    disabled={!name || !amount}
-                    style={styles.addButton}
-                  />
                 </View>
+                <Button
+                  title={editingId ? "Update" : "Add"}
+                  onPress={handleSubmit}
+                  loading={loading}
+                  disabled={!name || !amount}
+                  style={styles.addButton}
+                />
                 {editingId && (
                   <TouchableOpacity onPress={handleReset}>
                     <AppText variant="caption" color={colors.textMuted} align="right" style={{ marginTop: 4 }}>
@@ -172,7 +171,7 @@ const styles = StyleSheet.create({
     gap: layout.spacing.s,
   },
   addButton: {
-    marginTop: 22, // Align with input field (approx)
+    marginTop: layout.spacing.s,
   },
   list: {
     flex: 1,
