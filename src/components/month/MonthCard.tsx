@@ -1,4 +1,5 @@
 import { AppText, Card } from "@/components/common";
+import { useAppStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import type { MonthSummary } from "@/types";
 import { formatCurrency, formatWithSign, getMonthName } from "@/utils";
@@ -13,7 +14,8 @@ interface MonthCardProps {
 }
 
 export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress, dimmed = false }) => {
-  const { isPositive, isNegative, text: remainingText } = formatWithSign(summary.remainingCents);
+  const currency = useAppStore((state) => state.currency);
+  const { isPositive, isNegative, text: remainingText } = formatWithSign(summary.remainingCents, undefined, currency);
 
   let statusColor: string = colors.textMuted;
   if (isPositive) statusColor = colors.success;
@@ -48,7 +50,7 @@ export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress, dimmed =
             <AppText variant="caption" color={colors.textMuted}>
               Spent
             </AppText>
-            <AppText variant="bodyMedium">{formatCurrency(summary.spentCents)}</AppText>
+            <AppText variant="bodyMedium">{formatCurrency(summary.spentCents, undefined, currency)}</AppText>
           </View>
         </View>
 

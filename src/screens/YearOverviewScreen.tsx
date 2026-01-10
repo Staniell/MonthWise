@@ -20,6 +20,7 @@ export const YearOverviewScreen = () => {
     selectMonth,
     totalExcessCents,
     defaultAllowanceCents,
+    currency,
   } = useAppStore();
 
   const { showAllowanceSourcesModal } = useUIStore();
@@ -40,7 +41,7 @@ export const YearOverviewScreen = () => {
   };
 
   const renderHeader = () => {
-    const { text: excessText, isPositive, isNegative } = formatWithSign(totalExcessCents);
+    const { text: excessText, isPositive, isNegative } = formatWithSign(totalExcessCents, undefined, currency);
     let excessColor: string = colors.textSecondary;
     if (isPositive) excessColor = colors.success;
     if (isNegative) excessColor = colors.danger;
@@ -79,7 +80,7 @@ export const YearOverviewScreen = () => {
             <AppText variant="caption" color={colors.textMuted}>
               Monthly Allowance ✏️
             </AppText>
-            <AppText variant="heading3">{formatCurrency(defaultAllowanceCents)}</AppText>
+            <AppText variant="heading3">{formatCurrency(defaultAllowanceCents, undefined, currency)}</AppText>
           </TouchableOpacity>
         </Card>
       </View>

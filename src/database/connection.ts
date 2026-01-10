@@ -9,8 +9,9 @@ let initPromise: Promise<SQLite.SQLiteDatabase> | null = null;
  * Default expense categories with icons and colors
  */
 const DEFAULT_CATEGORIES = [
-  { name: "Food & Dining", icon: "🍔", color: "#FF6B6B" },
-  { name: "Transportation", icon: "🚗", color: "#4ECDC4" },
+  { name: "Pets", icon: "🐾", color: "#FF9F43" },
+  { name: "Vehicle", icon: "🚗", color: "#4ECDC4" },
+  { name: "Food", icon: "🍔", color: "#FF6B6B" },
   { name: "Utilities", icon: "💡", color: "#FFE66D" },
   { name: "Entertainment", icon: "🎬", color: "#95E1D3" },
   { name: "Shopping", icon: "🛒", color: "#DDA0DD" },
@@ -88,50 +89,60 @@ async function initializeDatabase(db: SQLite.SQLiteDatabase): Promise<void> {
     currentVersion = 0;
   }
 
-  // Run migrations if needed
-  if (currentVersion < SCHEMA_VERSION) {
-    if (currentVersion > 0) {
-      await runMigrations(db, currentVersion, SCHEMA_VERSION);
-    }
-
-    // Update schema version
-    await db.runAsync(
-      "INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('schema_version', ?, datetime('now'))",
-      [SCHEMA_VERSION.toString()]
-    );
+  // Run migrations if needed (Standard migrations)
+  if (currentVersion < SCHEMA_VERSION && currentVersion > 0) {
+    await runMigrations(db, currentVersion, SCHEMA_VERSION);
   }
 
-  // Seed default categories if empty
-  await seedDefaultCategories(db);
+  // FORCE version to 1 as requested to reset the logic
+  await db.runAsync(
+    "INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('schema_version', '1', datetime('now'))"
+  );
 
-  console.log(`Database initialized with schema version ${SCHEMA_VERSION}`);
+  // Sync default categories - ALWAYS runs to ensure names and order are correct
+  await syncDefaultCategories(db);
+
+  console.log(`Database initialized (Managed Category Sync enforced)`);
 }
 
 /**
- * Seed default expense categories if none exist
+ * Force synchronization of default categories.
+ * Ensures names, icons, and order match the code's source of truth.
  */
-async function seedDefaultCategories(db: SQLite.SQLiteDatabase): Promise<void> {
-  const result = await db.getFirstAsync<{ count: number }>(
-    "SELECT COUNT(*) as count FROM categories WHERE deleted_at IS NULL"
-  );
+async function syncDefaultCategories(db: SQLite.SQLiteDatabase): Promise<void> {
+  console.log("Synchronizing default categories...");
 
-  if (result && result.count === 0) {
-    console.log("Seeding default categories...");
+  // 1. Resolve naming legacy: Force update older names to new ones
+  await db.runAsync("UPDATE categories SET name = 'Food' WHERE name = 'Food & Dining'");
+  await db.runAsync("UPDATE categories SET name = 'Vehicle' WHERE name = 'Transportation'");
 
-    for (let i = 0; i < DEFAULT_CATEGORIES.length; i++) {
-      const cat = DEFAULT_CATEGORIES[i];
-      if (cat) {
-        await db.runAsync("INSERT INTO categories (name, icon, color, sort_order) VALUES (?, ?, ?, ?)", [
-          cat.name,
-          cat.icon,
-          cat.color,
-          i,
-        ]);
-      }
+  // 2. Insert or Update each category from the definitive code list
+  for (let i = 0; i < DEFAULT_CATEGORIES.length; i++) {
+    const cat = DEFAULT_CATEGORIES[i]!;
+
+    // Check if category exists (by name)
+    const existing = await db.getFirstAsync<{ id: number }>("SELECT id FROM categories WHERE name = ?", [cat.name]);
+
+    if (existing) {
+      // Refresh properties and order for existing categories
+      await db.runAsync("UPDATE categories SET icon = ?, color = ?, sort_order = ?, deleted_at = NULL WHERE id = ?", [
+        cat.icon,
+        cat.color,
+        i, // Using the loop index as the definitive sort order
+        existing.id,
+      ]);
+    } else {
+      // Create missing categories
+      await db.runAsync("INSERT INTO categories (name, icon, color, sort_order) VALUES (?, ?, ?, ?)", [
+        cat.name,
+        cat.icon,
+        cat.color,
+        i,
+      ]);
     }
-
-    console.log(`Seeded ${DEFAULT_CATEGORIES.length} default categories`);
   }
+
+  console.log(`Synchronization complete: ${DEFAULT_CATEGORIES.length} categories managed.`);
 }
 
 /**

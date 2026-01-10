@@ -9,7 +9,8 @@ import { FlatList, Modal, StyleSheet, TouchableOpacity, TouchableWithoutFeedback
 
 export const AllowanceSourcesModal = () => {
   const { isAllowanceSourcesModalVisible, hideAllowanceSourcesModal } = useUIStore();
-  const { allowanceSources, addAllowanceSource, updateAllowanceSource, deleteAllowanceSource } = useAppStore();
+  const { allowanceSources, addAllowanceSource, updateAllowanceSource, deleteAllowanceSource, currency } =
+    useAppStore();
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -64,7 +65,7 @@ export const AllowanceSourcesModal = () => {
     <View style={styles.itemContainer}>
       <View style={styles.itemInfo}>
         <AppText variant="bodyMedium">{item.name}</AppText>
-        <AppText variant="body">{formatCurrency(item.amountCents)}</AppText>
+        <AppText variant="body">{formatCurrency(item.amountCents, undefined, currency)}</AppText>
       </View>
       <View style={styles.itemActions}>
         <TouchableOpacity onPress={() => handleEdit(item)} style={styles.iconButton}>

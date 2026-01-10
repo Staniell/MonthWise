@@ -2,7 +2,7 @@ import { AppText, Button, Card, Input } from "@/components/common";
 import { useAppStore, useUIStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { CreateExpenseDTO, UpdateExpenseDTO } from "@/types";
-import { formatForInput, parseToCents } from "@/utils";
+import { formatForInput, getCurrencySymbol, parseToCents } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
@@ -21,7 +21,7 @@ import {
 export const AddExpenseModal = () => {
   const { isAddExpenseModalVisible, isEditExpenseModalVisible, editingExpenseId, hideExpenseModal } = useUIStore();
 
-  const { addExpense, updateExpense, deleteExpense, selectedMonthExpenses, selectedMonthId, categories } =
+  const { addExpense, updateExpense, deleteExpense, selectedMonthExpenses, selectedMonthId, categories, currency } =
     useAppStore();
 
   const [amount, setAmount] = useState("");
@@ -119,7 +119,7 @@ export const AddExpenseModal = () => {
                   keyboardType="numeric"
                   value={amount}
                   onChangeText={setAmount}
-                  leftIcon={<AppText color={colors.textMuted}>$</AppText>}
+                  leftIcon={<AppText color={colors.textMuted}>{getCurrencySymbol(currency)}</AppText>}
                   autoFocus={!isEditing}
                 />
 

@@ -1,4 +1,10 @@
-import { AllowanceRepository, CategoryRepository, ExpenseRepository, MonthRepository } from "@/database";
+import {
+  AllowanceRepository,
+  CategoryRepository,
+  ExpenseRepository,
+  MonthRepository,
+  SettingsRepository,
+} from "@/database";
 import { CalculationService } from "@/services";
 import type {
   AllowanceSource,
@@ -19,6 +25,7 @@ interface AppState {
   allowanceSources: AllowanceSource[];
   categories: Category[];
   monthSummaries: MonthSummary[];
+  currency: string;
 
   // Current month detail view
   selectedMonthId: number | null;
@@ -57,6 +64,9 @@ interface AppState {
 
   // --- Actions: Categories ---
   loadCategories: () => Promise<void>;
+
+  // --- Actions: Settings ---
+  setCurrency: (currency: string) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -65,6 +75,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   allowanceSources: [],
   categories: [],
   monthSummaries: [],
+  currency: "USD",
   selectedMonthId: null,
   selectedMonthExpenses: [],
   isLoading: false,
@@ -111,6 +122,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isLoading: true });
     try {
       await get().loadCategories();
+
+      // Load currency preference
+      const savedCurrency = await SettingsRepository.get("currency");
+      if (savedCurrency) {
+        set({ currency: savedCurrency });
+      }
+
       await get().loadYearData(get().selectedYear);
     } finally {
       set({ isLoading: false });
@@ -215,5 +233,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   loadCategories: async () => {
     const categories = await CategoryRepository.findAll();
     set({ categories });
+  },
+
+  setCurrency: async (currency: string) => {
+    set({ currency });
+    await SettingsRepository.set("currency", currency);
   },
 }));

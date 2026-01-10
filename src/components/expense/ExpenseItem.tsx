@@ -1,4 +1,5 @@
 import { AppText } from "@/components/common";
+import { useAppStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import type { ExpenseWithCategory } from "@/types";
 import { formatCurrency, formatDate } from "@/utils";
@@ -12,6 +13,7 @@ interface ExpenseItemProps {
 }
 
 export const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onPress, onLongPress }) => {
+  const currency = useAppStore((state) => state.currency);
   return (
     <TouchableOpacity
       style={styles.container}
@@ -30,7 +32,7 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({ expense, onPress, onLo
             {expense.category.name}
           </AppText>
           <AppText variant="bodyMedium" color={colors.text}>
-            {formatCurrency(expense.amountCents)}
+            {formatCurrency(expense.amountCents, undefined, currency)}
           </AppText>
         </View>
 

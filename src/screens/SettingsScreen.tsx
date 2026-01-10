@@ -4,12 +4,14 @@ import { useAppStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export const SettingsScreen = () => {
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const refreshData = useAppStore((state) => state.refreshData);
+  const currency = useAppStore((state) => state.currency);
+  const setCurrency = useAppStore((state) => state.setCurrency);
 
   const handleExport = async () => {
     setExporting(true);
@@ -88,6 +90,28 @@ export const SettingsScreen = () => {
 
       <Card style={styles.section}>
         <AppText variant="heading3" style={styles.sectionTitle}>
+          Preferences
+        </AppText>
+        <AppText variant="body" color={colors.textMuted} style={{ marginBottom: layout.spacing.s }}>
+          Default Currency
+        </AppText>
+        <View style={styles.currencyRow}>
+          {["USD", "EUR", "GBP", "JPY", "PHP"].map((curr) => (
+            <TouchableOpacity
+              key={curr}
+              onPress={() => setCurrency(curr)}
+              style={[styles.currencyButton, currency === curr && styles.currencyButtonActive]}
+            >
+              <AppText variant="bodyMedium" color={currency === curr ? colors.primaryForeground : colors.text}>
+                {curr}
+              </AppText>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Card>
+
+      <Card style={styles.section}>
+        <AppText variant="heading3" style={styles.sectionTitle}>
           About
         </AppText>
         <View style={styles.aboutRow}>
@@ -129,5 +153,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  currencyRow: {
+    flexDirection: "row",
+    gap: layout.spacing.s,
+    flexWrap: "wrap",
+  },
+  currencyButton: {
+    paddingVertical: layout.spacing.s,
+    paddingHorizontal: layout.spacing.m,
+    borderRadius: layout.borderRadius.m,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  currencyButtonActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
 });

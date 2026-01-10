@@ -20,6 +20,21 @@ export function formatCurrency(cents: number, locale: string = "en-US", currency
 }
 
 /**
+ * Get currency symbol for a currency code
+ */
+export function getCurrencySymbol(currency: string = "USD", locale: string = "en-US"): string {
+  return (0)
+    .toLocaleString(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })
+    .replace(/\d/g, "")
+    .trim();
+}
+
+/**
  * Format cents to compact display (no currency symbol, for inputs)
  * @param cents - Amount in cents
  */

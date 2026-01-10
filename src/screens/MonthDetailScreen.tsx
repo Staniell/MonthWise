@@ -13,7 +13,8 @@ import { FlatList, StyleSheet, View } from "react-native";
 
 export const MonthDetailScreen = () => {
   const router = useRouter();
-  const { selectedMonthId, selectedMonthExpenses, monthSummaries, categories, clearSelectedMonth } = useAppStore();
+  const { selectedMonthId, selectedMonthExpenses, monthSummaries, categories, clearSelectedMonth, currency } =
+    useAppStore();
 
   const { showAddExpenseModal, showEditExpenseModal } = useUIStore();
 
@@ -41,7 +42,11 @@ export const MonthDetailScreen = () => {
   const renderHeader = () => {
     if (!currentSummary) return null;
 
-    const { text: remainingText, isPositive, isNegative } = formatWithSign(currentSummary.remainingCents);
+    const {
+      text: remainingText,
+      isPositive,
+      isNegative,
+    } = formatWithSign(currentSummary.remainingCents, undefined, currency);
     let remainingColor: string = colors.textSecondary;
     if (isPositive) remainingColor = colors.success;
     if (isNegative) remainingColor = colors.danger;
@@ -63,13 +68,15 @@ export const MonthDetailScreen = () => {
               <AppText variant="body" color={colors.textMuted}>
                 Allowance
               </AppText>
-              <AppText variant="bodyMedium">{formatCurrency(currentSummary.allowanceCents)}</AppText>
+              <AppText variant="bodyMedium">
+                {formatCurrency(currentSummary.allowanceCents, undefined, currency)}
+              </AppText>
             </View>
             <View style={styles.statRow}>
               <AppText variant="body" color={colors.textMuted}>
                 Spent
               </AppText>
-              <AppText variant="bodyMedium">{formatCurrency(currentSummary.spentCents)}</AppText>
+              <AppText variant="bodyMedium">{formatCurrency(currentSummary.spentCents, undefined, currency)}</AppText>
             </View>
           </View>
         </Card>
