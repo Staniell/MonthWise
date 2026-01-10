@@ -40,10 +40,27 @@ export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress, dimmed =
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <Card style={[styles.container, dimmed && { opacity: 0.4 }]}>
         <View style={styles.header}>
-          <AppText variant="heading3" style={styles.monthName}>
-            {getMonthName(summary.month)}
-          </AppText>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <AppText variant="heading3" style={styles.monthName}>
+              {getMonthName(summary.month)}
+            </AppText>
+            {summary.allowanceOverrideCents !== null && (
+              <View style={styles.customBadge}>
+                <AppText variant="caption" color={colors.primary} style={{ fontSize: 8, fontWeight: "bold" }}>
+                  *
+                </AppText>
+              </View>
+            )}
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <AppText variant="caption" color={colors.textMuted} style={{ marginRight: 4 }}>
+              Allowance:
+            </AppText>
+            <AppText variant="bodyMedium" color={colors.textSecondary}>
+              {formatCurrency(summary.allowanceCents, undefined, currency, hideCents)}
+            </AppText>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} style={{ marginLeft: 8 }} />
+          </View>
         </View>
 
         <View style={styles.statsRow}>
@@ -56,29 +73,11 @@ export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress, dimmed =
             </AppText>
           </View>
 
-          <View style={{ alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <AppText variant="caption" color={colors.textMuted}>
-                Allowance
-              </AppText>
-              {summary.allowanceOverrideCents !== null && (
-                <View style={styles.customBadge}>
-                  <AppText variant="caption" color={colors.primary} style={{ fontSize: 8, fontWeight: "bold" }}>
-                    *
-                  </AppText>
-                </View>
-              )}
-            </View>
-            <AppText variant="bodyMedium">
-              {formatCurrency(summary.allowanceCents, undefined, currency, hideCents)}
-            </AppText>
-          </View>
-
           <View style={styles.spentContainer}>
             <AppText variant="caption" color={colors.textMuted}>
               Spent
             </AppText>
-            <AppText variant="bodyMedium" color={colors.warning}>
+            <AppText variant="heading3" color={colors.warning}>
               {formatCurrency(summary.spentCents, undefined, currency, hideCents)}
             </AppText>
           </View>

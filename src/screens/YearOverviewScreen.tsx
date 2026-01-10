@@ -20,8 +20,10 @@ export const YearOverviewScreen = () => {
     selectMonth,
     totalExcessCents,
     defaultAllowanceCents,
+    avgAllowanceCents,
     currency,
     hideCents,
+    totalSpentCents,
     currentProfileId,
     profiles,
   } = useAppStore();
@@ -87,12 +89,19 @@ export const YearOverviewScreen = () => {
           <View style={styles.divider} />
           <TouchableOpacity style={styles.statItem} onPress={showAllowanceSourcesModal} activeOpacity={0.7}>
             <AppText variant="caption" color={colors.textMuted}>
-              Monthly Allowance ✏️
+              Avg. Allowance
             </AppText>
-            <AppText variant="heading3">
-              {formatCurrency(defaultAllowanceCents, undefined, currency, hideCents)}
-            </AppText>
+            <AppText variant="heading3">{formatCurrency(avgAllowanceCents, undefined, currency, hideCents)}</AppText>
           </TouchableOpacity>
+          <View style={styles.divider} />
+          <View style={styles.statItem}>
+            <AppText variant="caption" color={colors.textMuted}>
+              Total Spent
+            </AppText>
+            <AppText variant="heading3" color={colors.warning}>
+              {formatCurrency(totalSpentCents, undefined, currency, hideCents)}
+            </AppText>
+          </View>
         </Card>
       </View>
     );

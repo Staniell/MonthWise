@@ -44,7 +44,9 @@ interface AppState {
 
   // --- Computed Values ---
   defaultAllowanceCents: number;
+  avgAllowanceCents: number;
   totalExcessCents: number;
+  totalSpentCents: number;
 
   // --- Actions: Navigation ---
   setSelectedYear: (year: number) => void;
@@ -99,7 +101,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   isLoading: false,
   isLoadingExpenses: false,
   defaultAllowanceCents: 0,
+  avgAllowanceCents: 0,
   totalExcessCents: 0,
+  totalSpentCents: 0,
 
   // --- Navigation ---
   setSelectedYear: (year: number) => {
@@ -118,12 +122,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       const monthRecord = await MonthRepository.getOrCreate(year, month, profileId);
       const expenses = await ExpenseRepository.findByMonthId(monthRecord.id);
 
-      // Refresh year data to update monthSummaries with new monthId
-      await get().loadYearData(year);
+      // Update the specific month in monthSummaries locally (avoid reloading all data)
+      const currentSummaries = get().monthSummaries;
+      const updatedSummaries = currentSummaries.map((s) => {
+        if (s.month === month && s.year === year) {
+          return { ...s, monthId: monthRecord.id };
+        }
+        return s;
+      });
 
       set({
         selectedMonthId: monthRecord.id,
         selectedMonthExpenses: expenses,
+        monthSummaries: updatedSummaries,
         isLoadingExpenses: false,
       });
     } catch (error) {
@@ -219,13 +230,17 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
 
       const totalExcess = CalculationService.calculateTotalExcess(summaries, upToMonth);
+      const totalSpent = summaries.reduce((sum, m) => sum + m.spentCents, 0);
+      const avgAllowance = Math.round(summaries.reduce((sum, m) => sum + m.allowanceCents, 0) / 12);
 
       set({
         selectedYear: year,
         allowanceSources: sources,
         monthSummaries: summaries,
         defaultAllowanceCents: defaultAllowance,
+        avgAllowanceCents: avgAllowance,
         totalExcessCents: totalExcess,
+        totalSpentCents: totalSpent,
         isLoading: false,
       });
     } catch (error) {

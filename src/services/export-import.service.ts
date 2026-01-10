@@ -151,6 +151,9 @@ export async function importData(jsonString: string): Promise<ImportResult> {
     await db.execAsync("DELETE FROM months");
     await db.execAsync("DELETE FROM categories");
     await db.execAsync("DELETE FROM allowance_sources");
+    // Clear profiles but ensure default profile exists for foreign key constraints
+    await db.execAsync("DELETE FROM profiles");
+    await db.runAsync(`INSERT INTO profiles (id, name, created_at) VALUES (1, 'Default', datetime('now'))`);
 
     // Import categories
     for (const cat of data.data.categories) {
@@ -163,19 +166,43 @@ export async function importData(jsonString: string): Promise<ImportResult> {
 
     // Import allowance sources
     for (const src of data.data.allowanceSources) {
+      // Handle backwards compatibility: use year from export or default to current year
+      const year = (src as any).year ?? new Date().getFullYear();
+      // Default profileId to 1 for backwards compatibility
+      const profileId = (src as any).profileId ?? 1;
       await db.runAsync(
-        `INSERT INTO allowance_sources (id, name, amount_cents, is_active, created_at, updated_at, deleted_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [src.id, src.name, src.amountCents, src.isActive ? 1 : 0, src.createdAt, src.updatedAt, src.deletedAt ?? null]
+        `INSERT INTO allowance_sources (id, profile_id, year, name, amount_cents, is_active, created_at, updated_at, deleted_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          src.id,
+          profileId,
+          year,
+          src.name,
+          src.amountCents,
+          src.isActive ? 1 : 0,
+          src.createdAt,
+          src.updatedAt,
+          src.deletedAt ?? null,
+        ]
       );
     }
 
     // Import months
     for (const month of data.data.months) {
+      // Default profileId to 1 for backwards compatibility
+      const profileId = (month as any).profileId ?? 1;
       await db.runAsync(
-        `INSERT INTO months (id, year, month, allowance_override_cents, created_at, updated_at) 
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [month.id, month.year, month.month, month.allowanceOverrideCents ?? null, month.createdAt, month.updatedAt]
+        `INSERT INTO months (id, profile_id, year, month, allowance_override_cents, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          month.id,
+          profileId,
+          month.year,
+          month.month,
+          month.allowanceOverrideCents ?? null,
+          month.createdAt,
+          month.updatedAt,
+        ]
       );
     }
 
