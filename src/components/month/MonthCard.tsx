@@ -18,14 +18,8 @@ export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress, dimmed =
   const hideCents = useAppStore((state) => state.hideCents);
   const selectedYear = useAppStore((state) => state.selectedYear);
 
-  // Determine if this month is in the future
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-  const isFutureMonth = selectedYear > currentYear || (selectedYear === currentYear && summary.month > currentMonth);
-
-  // For future months, show 0 remaining
-  const displayRemaining = isFutureMonth ? 0 : summary.remainingCents;
+  // Always show the calculated remaining amount, even for future months (for budget planning)
+  const displayRemaining = summary.remainingCents;
   const {
     isPositive,
     isNegative,
@@ -61,11 +55,32 @@ export const MonthCard: React.FC<MonthCardProps> = ({ summary, onPress, dimmed =
               {remainingText}
             </AppText>
           </View>
+
+          <View style={{ alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <AppText variant="caption" color={colors.textMuted}>
+                Allowance
+              </AppText>
+              {summary.allowanceOverrideCents !== null && (
+                <View style={styles.customBadge}>
+                  <AppText variant="caption" color={colors.primary} style={{ fontSize: 8, fontWeight: "bold" }}>
+                    *
+                  </AppText>
+                </View>
+              )}
+            </View>
+            <AppText variant="bodyMedium">
+              {formatCurrency(summary.allowanceCents, undefined, currency, hideCents)}
+            </AppText>
+          </View>
+
           <View style={styles.spentContainer}>
             <AppText variant="caption" color={colors.textMuted}>
               Spent
             </AppText>
-            <AppText variant="bodyMedium">{formatCurrency(summary.spentCents, undefined, currency, hideCents)}</AppText>
+            <AppText variant="bodyMedium" color={colors.warning}>
+              {formatCurrency(summary.spentCents, undefined, currency, hideCents)}
+            </AppText>
           </View>
         </View>
 
@@ -111,5 +126,16 @@ const styles = StyleSheet.create({
   progressBar: {
     height: "100%",
     borderRadius: 2,
+  },
+  customBadge: {
+    marginLeft: 4,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 4,
+    width: 12,
+    height: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

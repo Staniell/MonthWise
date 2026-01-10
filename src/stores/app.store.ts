@@ -3,8 +3,10 @@ import {
   CategoryRepository,
   ExpenseRepository,
   MonthRepository,
+  ProfileRepository,
   SettingsRepository,
 } from "@/database";
+import type { Profile } from "@/database/repositories/profile.repository";
 import { CalculationService } from "@/services";
 import type {
   AllowanceSource,
@@ -27,6 +29,10 @@ interface AppState {
   monthSummaries: MonthSummary[];
   currency: string;
   hideCents: boolean;
+
+  // Profile support
+  currentProfileId: number;
+  profiles: Profile[];
 
   // Current month detail view
   selectedMonthId: number | null;
@@ -69,6 +75,13 @@ interface AppState {
   // --- Actions: Settings ---
   setCurrency: (currency: string) => Promise<void>;
   setHideCents: (hideCents: boolean) => Promise<void>;
+
+  // --- Actions: Profiles ---
+  loadProfiles: () => Promise<void>;
+  switchProfile: (profileId: number) => Promise<void>;
+  createProfile: (name: string) => Promise<Profile>;
+  deleteProfile: (id: number) => Promise<void>;
+  renameProfile: (id: number, name: string) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -79,6 +92,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   monthSummaries: [],
   currency: "USD",
   hideCents: false,
+  currentProfileId: 1,
+  profiles: [],
   selectedMonthId: null,
   selectedMonthExpenses: [],
   isLoading: false,
@@ -97,10 +112,14 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   selectMonth: async (year: number, month: number) => {
     set({ isLoadingExpenses: true });
+    const profileId = get().currentProfileId;
     try {
-      // Ensure month record exists
-      const monthRecord = await MonthRepository.getOrCreate(year, month);
+      // Ensure month record exists for this profile
+      const monthRecord = await MonthRepository.getOrCreate(year, month, profileId);
       const expenses = await ExpenseRepository.findByMonthId(monthRecord.id);
+
+      // Refresh year data to update monthSummaries with new monthId
+      await get().loadYearData(year);
 
       set({
         selectedMonthId: monthRecord.id,
@@ -125,6 +144,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isLoading: true });
     try {
       await get().loadCategories();
+      await get().loadProfiles();
+
+      // Load saved profile preference
+      const savedProfileId = await SettingsRepository.get("currentProfileId");
+      if (savedProfileId) {
+        const profileId = parseInt(savedProfileId, 10);
+        const profiles = get().profiles;
+        if (profiles.some((p) => p.id === profileId)) {
+          set({ currentProfileId: profileId });
+        }
+      }
 
       // Load currency preference
       const savedCurrency = await SettingsRepository.get("currency");
@@ -147,13 +177,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   loadYearData: async (year: number) => {
     if (get().isLoading) return; // Prevent concurrent loads
     set({ isLoading: true });
+    const profileId = get().currentProfileId;
     try {
-      // Load allowance sources for the specific year
-      const sources = await AllowanceRepository.findAllActiveByYear(year);
+      // Load allowance sources for the specific year and profile
+      const sources = await AllowanceRepository.findAllActiveByYear(year, profileId);
       const defaultAllowance = CalculationService.calculateTotalAllowance(sources);
 
-      // Load months for the year
-      const monthRecords = await MonthRepository.findByYear(year);
+      // Load months for the year and profile
+      const monthRecords = await MonthRepository.findByYear(year, profileId);
 
       // Build summaries for all 12 months in parallel
       const summaryPromises = Array.from({ length: 12 }, async (_, i) => {
@@ -216,7 +247,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // --- Allowance Sources ---
   addAllowanceSource: async (dto: CreateAllowanceSourceDTO) => {
-    const source = await AllowanceRepository.create(dto);
+    const profileId = get().currentProfileId;
+    const source = await AllowanceRepository.create(dto, profileId);
     await get().refreshData();
     return source;
   },
@@ -234,7 +266,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // --- Month Override ---
   setMonthAllowanceOverride: async (year: number, month: number, amountCents: number | null) => {
-    await MonthRepository.setAllowanceOverride(year, month, amountCents);
+    const profileId = get().currentProfileId;
+    await MonthRepository.setAllowanceOverride(year, month, amountCents, profileId);
     await get().refreshData();
   },
 
@@ -270,5 +303,52 @@ export const useAppStore = create<AppState>((set, get) => ({
   setHideCents: async (hideCents: boolean) => {
     set({ hideCents });
     await SettingsRepository.set("hideCents", hideCents ? "true" : "false");
+  },
+
+  // --- Profiles ---
+  loadProfiles: async () => {
+    const profiles = await ProfileRepository.getAll();
+    if (profiles.length === 0) {
+      // Ensure default profile exists
+      const defaultProfile = await ProfileRepository.ensureDefaultExists();
+      set({ profiles: [defaultProfile], currentProfileId: defaultProfile.id });
+    } else {
+      set({ profiles });
+    }
+  },
+
+  switchProfile: async (profileId: number) => {
+    // First update the profileId so loadYearData uses the correct one
+    set({ currentProfileId: profileId });
+    await SettingsRepository.set("currentProfileId", String(profileId));
+    // Clear selected month when switching profiles
+    set({ selectedMonthId: null, selectedMonthExpenses: [] });
+    // Now load data for the new profile
+    await get().loadYearData(get().selectedYear);
+  },
+
+  createProfile: async (name: string) => {
+    const profile = await ProfileRepository.create(name);
+    const profiles = await ProfileRepository.getAll();
+    set({ profiles });
+    return profile;
+  },
+
+  deleteProfile: async (id: number) => {
+    const { currentProfileId } = get();
+    await ProfileRepository.delete(id);
+    const profiles = await ProfileRepository.getAll();
+
+    // If we deleted the current profile, switch to the first available
+    if (currentProfileId === id && profiles.length > 0) {
+      await get().switchProfile(profiles[0]!.id);
+    }
+    set({ profiles });
+  },
+
+  renameProfile: async (id: number, name: string) => {
+    await ProfileRepository.rename(id, name);
+    const profiles = await ProfileRepository.getAll();
+    set({ profiles });
   },
 }));

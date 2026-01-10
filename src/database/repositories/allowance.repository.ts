@@ -36,22 +36,29 @@ export const AllowanceRepository = {
   },
 
   /**
-   * Get all active allowance sources for a specific year
+   * Get all active allowance sources for a specific year and profile
    */
-  async findAllActiveByYear(year: number): Promise<AllowanceSource[]> {
+  async findAllActiveByYear(year: number, profileId: number = 1): Promise<AllowanceSource[]> {
     const db = await getDatabase();
     const results = await db.getAllAsync<AllowanceSourceEntity>(
-      "SELECT * FROM allowance_sources WHERE year = ? AND deleted_at IS NULL AND is_active = 1 ORDER BY created_at ASC",
-      [year]
+      "SELECT * FROM allowance_sources WHERE profile_id = ? AND year = ? AND deleted_at IS NULL AND is_active = 1 ORDER BY created_at ASC",
+      [profileId, year]
     );
     return results.map(mapToAllowanceSource);
   },
 
   /**
-   * Get all allowance sources (including inactive, excluding deleted)
+   * Get all allowance sources for a profile (including inactive, excluding deleted)
    */
-  async findAll(): Promise<AllowanceSource[]> {
+  async findAll(profileId?: number): Promise<AllowanceSource[]> {
     const db = await getDatabase();
+    if (profileId !== undefined) {
+      const results = await db.getAllAsync<AllowanceSourceEntity>(
+        "SELECT * FROM allowance_sources WHERE profile_id = ? AND deleted_at IS NULL ORDER BY created_at ASC",
+        [profileId]
+      );
+      return results.map(mapToAllowanceSource);
+    }
     const results = await db.getAllAsync<AllowanceSourceEntity>(
       "SELECT * FROM allowance_sources WHERE deleted_at IS NULL ORDER BY created_at ASC"
     );
@@ -61,8 +68,15 @@ export const AllowanceRepository = {
   /**
    * Get all including deleted (for export)
    */
-  async findAllIncludingDeleted(): Promise<AllowanceSource[]> {
+  async findAllIncludingDeleted(profileId?: number): Promise<AllowanceSource[]> {
     const db = await getDatabase();
+    if (profileId !== undefined) {
+      const results = await db.getAllAsync<AllowanceSourceEntity>(
+        "SELECT * FROM allowance_sources WHERE profile_id = ? ORDER BY created_at ASC",
+        [profileId]
+      );
+      return results.map(mapToAllowanceSource);
+    }
     const results = await db.getAllAsync<AllowanceSourceEntity>(
       "SELECT * FROM allowance_sources ORDER BY created_at ASC"
     );
@@ -70,13 +84,13 @@ export const AllowanceRepository = {
   },
 
   /**
-   * Create a new allowance source
+   * Create a new allowance source for a profile
    */
-  async create(dto: CreateAllowanceSourceDTO): Promise<AllowanceSource> {
+  async create(dto: CreateAllowanceSourceDTO, profileId: number = 1): Promise<AllowanceSource> {
     const db = await getDatabase();
     const result = await db.runAsync(
-      "INSERT INTO allowance_sources (year, name, amount_cents, is_active) VALUES (?, ?, ?, ?)",
-      [dto.year, dto.name, dto.amountCents, dto.isActive !== false ? 1 : 0]
+      "INSERT INTO allowance_sources (profile_id, year, name, amount_cents, is_active) VALUES (?, ?, ?, ?, ?)",
+      [profileId, dto.year, dto.name, dto.amountCents, dto.isActive !== false ? 1 : 0]
     );
 
     const created = await this.findById(result.lastInsertRowId);
@@ -137,12 +151,13 @@ export const AllowanceRepository = {
   },
 
   /**
-   * Calculate total monthly allowance from all active sources
+   * Calculate total monthly allowance from all active sources for a profile/year
    */
-  async calculateTotalAllowance(): Promise<number> {
+  async calculateTotalAllowance(year: number, profileId: number = 1): Promise<number> {
     const db = await getDatabase();
     const result = await db.getFirstAsync<{ total: number | null }>(
-      "SELECT SUM(amount_cents) as total FROM allowance_sources WHERE deleted_at IS NULL AND is_active = 1"
+      "SELECT SUM(amount_cents) as total FROM allowance_sources WHERE profile_id = ? AND year = ? AND deleted_at IS NULL AND is_active = 1",
+      [profileId, year]
     );
     return result?.total ?? 0;
   },

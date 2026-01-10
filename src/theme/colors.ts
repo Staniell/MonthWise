@@ -43,6 +43,7 @@ export const colors = {
   // States
   success: PALETTE.emerald500,
   danger: PALETTE.coral500,
+  warning: PALETTE.gold600,
   info: PALETTE.blue500,
 
   // UI Elements

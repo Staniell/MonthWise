@@ -3,4 +3,5 @@ export { AllowanceRepository } from "./allowance.repository";
 export { CategoryRepository } from "./category.repository";
 export { ExpenseRepository } from "./expense.repository";
 export { MonthRepository } from "./month.repository";
+export { ProfileRepository } from "./profile.repository";
 export { SettingsRepository } from "./settings.repository";

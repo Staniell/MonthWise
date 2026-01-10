@@ -22,7 +22,11 @@ export const YearOverviewScreen = () => {
     defaultAllowanceCents,
     currency,
     hideCents,
+    currentProfileId,
+    profiles,
   } = useAppStore();
+
+  const currentProfile = profiles.find((p) => p.id === currentProfileId);
 
   const { showAllowanceSourcesModal } = useUIStore();
 
@@ -117,6 +121,16 @@ export const YearOverviewScreen = () => {
         showsVerticalScrollIndicator={false}
       />
       <AllowanceSourcesModal />
+
+      {/* Floating Profile Badge */}
+      {currentProfile && (
+        <View style={styles.floatingBadge}>
+          <Ionicons name="person-circle" size={20} color={colors.primary} />
+          <AppText variant="caption" color={colors.text} style={{ marginLeft: 6, fontWeight: "600" }}>
+            {currentProfile.name}
+          </AppText>
+        </View>
+      )}
     </View>
   );
 };
@@ -156,5 +170,23 @@ const styles = StyleSheet.create({
     width: 1,
     height: "60%",
     backgroundColor: colors.separator,
+  },
+  floatingBadge: {
+    position: "absolute",
+    bottom: layout.spacing.m,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.card,
+    paddingHorizontal: layout.spacing.m,
+    paddingVertical: layout.spacing.s,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });
