@@ -1,14 +1,16 @@
 import { AppText, Button, Card } from "@/components/common";
-import { exportAndShare, ImportError, pickAndImport } from "@/services";
+import { exportAndShare, ImportError, pickAndImport, UpdateService } from "@/services";
 import { useAppStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
 import React, { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 
 export const SettingsScreen = () => {
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
   const refreshData = useAppStore((state) => state.refreshData);
   const currency = useAppStore((state) => state.currency);
   const setCurrency = useAppStore((state) => state.setCurrency);
@@ -53,6 +55,15 @@ export const SettingsScreen = () => {
         },
       },
     ]);
+  };
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true);
+    try {
+      await UpdateService.checkForUpdateAsync();
+    } finally {
+      setCheckingUpdate(false);
+    }
   };
 
   return (
@@ -137,9 +148,26 @@ export const SettingsScreen = () => {
           <AppText variant="body" color={colors.textMuted}>
             Version
           </AppText>
-          <AppText variant="bodyMedium">1.0.0</AppText>
+          <AppText variant="bodyMedium">
+            {Constants.expoConfig?.version} ({UpdateService.getUpdateId().slice(0, 8)})
+          </AppText>
         </View>
+        <View style={[styles.aboutRow, { marginTop: layout.spacing.s }]}>
+          <AppText variant="body" color={colors.textMuted}>
+            Channel
+          </AppText>
+          <AppText variant="bodyMedium">{UpdateService.getChannel()}</AppText>
+        </View>
+
+        <Button
+          title="Check for Update"
+          onPress={handleCheckUpdate}
+          loading={checkingUpdate}
+          style={{ marginTop: layout.spacing.m }}
+          variant="secondary"
+        />
       </Card>
+      <View style={{ height: layout.spacing.xl }} />
     </ScrollView>
   );
 };
