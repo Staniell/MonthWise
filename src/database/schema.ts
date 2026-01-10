@@ -1,10 +1,11 @@
 // Database schema version and table definitions
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export const CREATE_TABLES = `
-  -- Allowance sources (salary, side income, etc.)
+  -- Allowance sources (salary, side income, etc.) per year
   CREATE TABLE IF NOT EXISTS allowance_sources (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    year INTEGER NOT NULL,
     name TEXT NOT NULL,
     amount_cents INTEGER NOT NULL DEFAULT 0,
     is_active INTEGER NOT NULL DEFAULT 1,
@@ -59,6 +60,7 @@ export const CREATE_TABLES = `
   );
 
   -- Create indexes for performance
+  CREATE INDEX IF NOT EXISTS idx_allowance_sources_year ON allowance_sources(year);
   CREATE INDEX IF NOT EXISTS idx_expenses_month_id ON expenses(month_id);
   CREATE INDEX IF NOT EXISTS idx_expenses_category_id ON expenses(category_id);
   CREATE INDEX IF NOT EXISTS idx_months_year ON months(year);

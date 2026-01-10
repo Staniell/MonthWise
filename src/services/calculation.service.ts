@@ -47,13 +47,16 @@ export const CalculationService = {
   },
 
   /**
-   * Calculate total excess across all months
+   * Calculate total excess across months up to and including `upToMonth`
    * Only counts positive remainders (savings)
    * @param summaries - Array of month summaries
+   * @param upToMonth - Calculate only for months 1 through upToMonth (inclusive)
    * @returns Total excess in cents
    */
-  calculateTotalExcess(summaries: MonthSummary[]): number {
-    return summaries.filter((m) => m.remainingCents > 0).reduce((sum, m) => sum + m.remainingCents, 0);
+  calculateTotalExcess(summaries: MonthSummary[], upToMonth: number): number {
+    return summaries
+      .filter((m) => m.month <= upToMonth && m.remainingCents > 0)
+      .reduce((sum, m) => sum + m.remainingCents, 0);
   },
 
   /**

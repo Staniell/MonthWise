@@ -9,11 +9,39 @@ describe("CalculationService", () => {
 
     it("should sum only active, non-deleted sources", () => {
       const sources: AllowanceSource[] = [
-        { id: 1, name: "Salary", amountCents: 500000, isActive: true, deletedAt: null, createdAt: "", updatedAt: "" },
-        { id: 2, name: "Side job", amountCents: 100000, isActive: true, deletedAt: null, createdAt: "", updatedAt: "" },
-        { id: 3, name: "Inactive", amountCents: 50000, isActive: false, deletedAt: null, createdAt: "", updatedAt: "" },
+        {
+          id: 1,
+          year: 2026,
+          name: "Salary",
+          amountCents: 500000,
+          isActive: true,
+          deletedAt: null,
+          createdAt: "",
+          updatedAt: "",
+        },
+        {
+          id: 2,
+          year: 2026,
+          name: "Side job",
+          amountCents: 100000,
+          isActive: true,
+          deletedAt: null,
+          createdAt: "",
+          updatedAt: "",
+        },
+        {
+          id: 3,
+          year: 2026,
+          name: "Inactive",
+          amountCents: 50000,
+          isActive: false,
+          deletedAt: null,
+          createdAt: "",
+          updatedAt: "",
+        },
         {
           id: 4,
+          year: 2026,
           name: "Deleted",
           amountCents: 30000,
           isActive: true,
@@ -86,37 +114,48 @@ describe("CalculationService", () => {
   });
 
   describe("calculateTotalExcess", () => {
-    it("should sum only positive remainders", () => {
-      const summaries: MonthSummary[] = [
-        {
-          year: 2026,
-          month: 1,
-          monthId: 1,
-          allowanceCents: 10000,
-          spentCents: 8000,
-          remainingCents: 2000,
-          expenseCount: 5,
-        },
-        {
-          year: 2026,
-          month: 2,
-          monthId: 2,
-          allowanceCents: 10000,
-          spentCents: 12000,
-          remainingCents: -2000,
-          expenseCount: 8,
-        },
-        {
-          year: 2026,
-          month: 3,
-          monthId: 3,
-          allowanceCents: 10000,
-          spentCents: 5000,
-          remainingCents: 5000,
-          expenseCount: 3,
-        },
-      ];
-      expect(CalculationService.calculateTotalExcess(summaries)).toBe(7000); // 2000 + 5000
+    const summaries: MonthSummary[] = [
+      {
+        year: 2026,
+        month: 1,
+        monthId: 1,
+        allowanceCents: 10000,
+        spentCents: 8000,
+        remainingCents: 2000,
+        expenseCount: 5,
+      },
+      {
+        year: 2026,
+        month: 2,
+        monthId: 2,
+        allowanceCents: 10000,
+        spentCents: 12000,
+        remainingCents: -2000,
+        expenseCount: 8,
+      },
+      {
+        year: 2026,
+        month: 3,
+        monthId: 3,
+        allowanceCents: 10000,
+        spentCents: 5000,
+        remainingCents: 5000,
+        expenseCount: 3,
+      },
+    ];
+
+    it("should sum only positive remainders up to specified month", () => {
+      // Up to month 3: 2000 (Jan) + 5000 (Mar) = 7000
+      expect(CalculationService.calculateTotalExcess(summaries, 3)).toBe(7000);
+    });
+
+    it("should filter by month correctly", () => {
+      // Up to month 1: only 2000 (Jan)
+      expect(CalculationService.calculateTotalExcess(summaries, 1)).toBe(2000);
+    });
+
+    it("should return 0 if upToMonth is 0", () => {
+      expect(CalculationService.calculateTotalExcess(summaries, 0)).toBe(0);
     });
   });
 

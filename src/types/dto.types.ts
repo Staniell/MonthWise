@@ -1,6 +1,7 @@
 // DTOs - Data Transfer Objects for create/update operations
 
 export interface CreateAllowanceSourceDTO {
+  year: number;
   name: string;
   amountCents: number;
   isActive?: boolean;

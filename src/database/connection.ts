@@ -90,19 +90,19 @@ async function initializeDatabase(db: SQLite.SQLiteDatabase): Promise<void> {
   }
 
   // Run migrations if needed (Standard migrations)
-  if (currentVersion < SCHEMA_VERSION && currentVersion > 0) {
-    await runMigrations(db, currentVersion, SCHEMA_VERSION);
-  }
+  // Always run migrations - the migration function checks if column already exists
+  await runMigrations(db, currentVersion, SCHEMA_VERSION);
 
-  // FORCE version to 1 as requested to reset the logic
+  // Update schema version to current
   await db.runAsync(
-    "INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('schema_version', '1', datetime('now'))"
+    "INSERT OR REPLACE INTO app_settings (key, value, updated_at) VALUES ('schema_version', ?, datetime('now'))",
+    [SCHEMA_VERSION.toString()]
   );
 
   // Sync default categories - ALWAYS runs to ensure names and order are correct
   await syncDefaultCategories(db);
 
-  console.log(`Database initialized (Managed Category Sync enforced)`);
+  console.log(`Database initialized with schema version ${SCHEMA_VERSION}`);
 }
 
 /**

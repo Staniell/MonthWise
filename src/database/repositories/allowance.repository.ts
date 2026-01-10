@@ -12,6 +12,7 @@ import { getDatabase } from "../connection";
 function mapToAllowanceSource(entity: AllowanceSourceEntity): AllowanceSource {
   return {
     id: entity.id,
+    year: entity.year,
     name: entity.name,
     amountCents: entity.amount_cents,
     isActive: entity.is_active === 1,
@@ -35,12 +36,13 @@ export const AllowanceRepository = {
   },
 
   /**
-   * Get all active allowance sources
+   * Get all active allowance sources for a specific year
    */
-  async findAllActive(): Promise<AllowanceSource[]> {
+  async findAllActiveByYear(year: number): Promise<AllowanceSource[]> {
     const db = await getDatabase();
     const results = await db.getAllAsync<AllowanceSourceEntity>(
-      "SELECT * FROM allowance_sources WHERE deleted_at IS NULL AND is_active = 1 ORDER BY created_at ASC"
+      "SELECT * FROM allowance_sources WHERE year = ? AND deleted_at IS NULL AND is_active = 1 ORDER BY created_at ASC",
+      [year]
     );
     return results.map(mapToAllowanceSource);
   },
@@ -72,11 +74,10 @@ export const AllowanceRepository = {
    */
   async create(dto: CreateAllowanceSourceDTO): Promise<AllowanceSource> {
     const db = await getDatabase();
-    const result = await db.runAsync("INSERT INTO allowance_sources (name, amount_cents, is_active) VALUES (?, ?, ?)", [
-      dto.name,
-      dto.amountCents,
-      dto.isActive !== false ? 1 : 0,
-    ]);
+    const result = await db.runAsync(
+      "INSERT INTO allowance_sources (year, name, amount_cents, is_active) VALUES (?, ?, ?, ?)",
+      [dto.year, dto.name, dto.amountCents, dto.isActive !== false ? 1 : 0]
+    );
 
     const created = await this.findById(result.lastInsertRowId);
     if (!created) {

@@ -9,7 +9,7 @@ import { FlatList, Modal, StyleSheet, TouchableOpacity, TouchableWithoutFeedback
 
 export const AllowanceSourcesModal = () => {
   const { isAllowanceSourcesModalVisible, hideAllowanceSourcesModal } = useUIStore();
-  const { allowanceSources, addAllowanceSource, updateAllowanceSource, deleteAllowanceSource, currency } =
+  const { allowanceSources, addAllowanceSource, updateAllowanceSource, deleteAllowanceSource, currency, selectedYear } =
     useAppStore();
 
   const [name, setName] = useState("");
@@ -39,7 +39,7 @@ export const AllowanceSourcesModal = () => {
       if (editingId) {
         await updateAllowanceSource(editingId, { name, amountCents });
       } else {
-        await addAllowanceSource({ name, amountCents, isActive: true });
+        await addAllowanceSource({ year: selectedYear, name, amountCents, isActive: true });
       }
       handleReset();
     } catch (error) {

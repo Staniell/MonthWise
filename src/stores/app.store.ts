@@ -139,8 +139,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (get().isLoading) return; // Prevent concurrent loads
     set({ isLoading: true });
     try {
-      // Load allowance sources
-      const sources = await AllowanceRepository.findAllActive();
+      // Load allowance sources for the specific year
+      const sources = await AllowanceRepository.findAllActiveByYear(year);
       const defaultAllowance = CalculationService.calculateTotalAllowance(sources);
 
       // Load months for the year
@@ -160,7 +160,25 @@ export const useAppStore = create<AppState>((set, get) => ({
       });
 
       const summaries = await Promise.all(summaryPromises);
-      const totalExcess = CalculationService.calculateTotalExcess(summaries);
+
+      // Calculate excess: only up to the current month for this year
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+
+      let upToMonth: number;
+      if (year < currentYear) {
+        // Past year: include all 12 months
+        upToMonth = 12;
+      } else if (year > currentYear) {
+        // Future year: no excess yet
+        upToMonth = 0;
+      } else {
+        // Current year: include only up to and including current month
+        upToMonth = currentMonth;
+      }
+
+      const totalExcess = CalculationService.calculateTotalExcess(summaries, upToMonth);
 
       set({
         selectedYear: year,

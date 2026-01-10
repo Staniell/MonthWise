@@ -2,6 +2,7 @@
 
 export interface AllowanceSource {
   id: number;
+  year: number;
   name: string;
   amountCents: number;
   isActive: boolean;

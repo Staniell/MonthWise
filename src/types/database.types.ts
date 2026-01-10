@@ -1,6 +1,7 @@
 // Database types - matches SQLite schema
 export interface AllowanceSourceEntity {
   id: number;
+  year: number;
   name: string;
   amount_cents: number;
   is_active: number; // SQLite boolean (0 or 1)

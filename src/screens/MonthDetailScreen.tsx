@@ -8,7 +8,7 @@ import { formatCurrency, formatWithSign, getMonthName } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { Stack, useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 
 export const MonthDetailScreen = () => {
@@ -32,12 +32,6 @@ export const MonthDetailScreen = () => {
     };
     return { ...expense, category };
   });
-
-  useEffect(() => {
-    if (!currentSummary && !selectedMonthId) {
-      router.back();
-    }
-  }, [currentSummary, selectedMonthId]);
 
   const renderHeader = () => {
     if (!currentSummary) return null;
