@@ -1,0 +1,75 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native builds
+ios/
+android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+coverage/
+
+# Editor directories and files
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+
+# VS Code
+# Keep .vscode for shared settings
+.vscode/
+
+# Temporary files
+*.log
+*.tmp
+*.temp
+
+# SQLite database files (local dev)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# EAS
+.easignore
+
+# Build outputs
+build/
