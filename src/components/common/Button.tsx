@@ -26,7 +26,7 @@ export const Button: React.FC<ButtonProps> = ({
   const textVariant = size === "s" ? "small" : "bodyMedium";
 
   // Text color logic
-  let textColor = colors.white;
+  let textColor: string = colors.white;
   if (variant === "secondary") textColor = colors.text;
   if (variant === "ghost") textColor = colors.primary;
   if (variant === "primary") textColor = colors.primaryForeground;
