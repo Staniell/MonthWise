@@ -2,7 +2,7 @@
   "expo": {
     "name": "MonthWise",
     "slug": "MonthWise",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "monthwise",
@@ -14,9 +14,12 @@
       "backgroundColor": "#2C3E50"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.MonthWise",
+      "buildNumber": "3"
     },
     "android": {
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#2C3E50"
