@@ -35,6 +35,7 @@ export interface Expense {
   amountCents: number;
   note: string | null;
   expenseDate: string;
+  isPaid: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -46,7 +47,8 @@ export interface MonthSummary {
   monthId: number | null;
   allowanceCents: number;
   allowanceOverrideCents: number | null; // null = using default, number = custom override
-  spentCents: number;
+  spentCents: number; // Total of PAID expenses
+  balanceCents: number; // Total of UNPAID expenses
   remainingCents: number;
   expenseCount: number;
 }

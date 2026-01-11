@@ -12,10 +12,12 @@ import type {
   AllowanceSource,
   Category,
   CreateAllowanceSourceDTO,
+  CreateCategoryDTO,
   CreateExpenseDTO,
   Expense,
   MonthSummary,
   UpdateAllowanceSourceDTO,
+  UpdateCategoryDTO,
   UpdateExpenseDTO,
 } from "@/types";
 import { getCurrentYear } from "@/utils";
@@ -70,9 +72,14 @@ interface AppState {
   addExpense: (dto: CreateExpenseDTO) => Promise<Expense>;
   updateExpense: (id: number, dto: UpdateExpenseDTO) => Promise<Expense>;
   deleteExpense: (id: number) => Promise<void>;
+  bulkUpdateExpensePaidStatus: (ids: number[], isPaid: boolean) => Promise<void>;
+  bulkDeleteExpenses: (ids: number[]) => Promise<void>;
 
   // --- Actions: Categories ---
   loadCategories: () => Promise<void>;
+  addCategory: (dto: CreateCategoryDTO) => Promise<Category>;
+  updateCategory: (id: number, dto: UpdateCategoryDTO) => Promise<Category>;
+  deleteCategory: (id: number) => Promise<void>;
 
   // --- Actions: Settings ---
   setCurrency: (currency: string) => Promise<void>;
@@ -304,10 +311,37 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().refreshData();
   },
 
+  bulkUpdateExpensePaidStatus: async (ids: number[], isPaid: boolean) => {
+    await ExpenseRepository.bulkUpdatePaidStatus(ids, isPaid);
+    await get().refreshData();
+  },
+
+  bulkDeleteExpenses: async (ids: number[]) => {
+    await ExpenseRepository.bulkDelete(ids);
+    await get().refreshData();
+  },
+
   // --- Categories ---
   loadCategories: async () => {
     const categories = await CategoryRepository.findAll();
     set({ categories });
+  },
+
+  addCategory: async (dto) => {
+    const category = await CategoryRepository.create(dto);
+    await get().loadCategories();
+    return category;
+  },
+
+  updateCategory: async (id, dto) => {
+    const category = await CategoryRepository.update(id, dto);
+    await get().loadCategories();
+    return category;
+  },
+
+  deleteCategory: async (id) => {
+    await CategoryRepository.softDelete(id);
+    await get().loadCategories();
   },
 
   setCurrency: async (currency: string) => {

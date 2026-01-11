@@ -4,6 +4,7 @@ import { useAppStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
 
@@ -16,6 +17,7 @@ export const SettingsScreen = () => {
   const setCurrency = useAppStore((state) => state.setCurrency);
   const hideCents = useAppStore((state) => state.hideCents);
   const setHideCents = useAppStore((state) => state.setHideCents);
+  const router = useRouter();
 
   const handleExport = async () => {
     setExporting(true);
@@ -138,6 +140,16 @@ export const SettingsScreen = () => {
             thumbColor={colors.card}
           />
         </View>
+
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/settings/categories")}>
+          <View style={styles.menuItemLeft}>
+            <Ionicons name="pricetags" size={20} color={colors.primary} />
+            <AppText variant="bodyMedium" style={{ marginLeft: layout.spacing.m }}>
+              Manage Categories
+            </AppText>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
       </Card>
 
       <Card style={styles.section}>
@@ -229,5 +241,18 @@ const styles = StyleSheet.create({
     paddingTop: layout.spacing.l,
     borderTopWidth: 1,
     borderTopColor: colors.separator,
+  },
+  menuItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: layout.spacing.l,
+    paddingTop: layout.spacing.l,
+    borderTopWidth: 1,
+    borderTopColor: colors.separator,
+  },
+  menuItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 });

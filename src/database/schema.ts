@@ -1,5 +1,5 @@
 // Database schema version and table definitions
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const CREATE_TABLES = `
   -- User profiles for data isolation
@@ -56,6 +56,7 @@ export const CREATE_TABLES = `
     amount_cents INTEGER NOT NULL CHECK(amount_cents > 0),
     note TEXT,
     expense_date TEXT NOT NULL DEFAULT (date('now')),
+    is_paid INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     deleted_at TEXT,

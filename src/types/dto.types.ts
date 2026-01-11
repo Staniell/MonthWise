@@ -50,4 +50,5 @@ export interface UpdateExpenseDTO {
   amountCents?: number;
   note?: string;
   expenseDate?: string;
+  isPaid?: boolean;
 }

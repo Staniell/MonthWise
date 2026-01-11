@@ -29,12 +29,21 @@ export const CalculationService = {
   },
 
   /**
-   * Calculate total spent from expenses
+   * Calculate total spent from PAID expenses only
    * @param expenses - Array of expenses (should exclude deleted)
    * @returns Total in cents
    */
   calculateTotalSpent(expenses: Expense[]): number {
-    return expenses.filter((e) => !e.deletedAt).reduce((sum, expense) => sum + expense.amountCents, 0);
+    return expenses.filter((e) => !e.deletedAt && e.isPaid).reduce((sum, expense) => sum + expense.amountCents, 0);
+  },
+
+  /**
+   * Calculate total balance from UNPAID expenses only
+   * @param expenses - Array of expenses (should exclude deleted)
+   * @returns Total in cents
+   */
+  calculateTotalBalance(expenses: Expense[]): number {
+    return expenses.filter((e) => !e.deletedAt && !e.isPaid).reduce((sum, expense) => sum + expense.amountCents, 0);
   },
 
   /**
@@ -88,8 +97,10 @@ export const CalculationService = {
   ): MonthSummary {
     const allowanceOverrideCents = monthRecord?.allowanceOverrideCents ?? null;
     const allowanceCents = this.getMonthlyAllowance(monthRecord, defaultAllowanceCents);
-    const spentCents = this.calculateTotalSpent(expenses);
-    const remainingCents = this.calculateRemaining(allowanceCents, spentCents);
+    const spentCents = this.calculateTotalSpent(expenses); // PAID expenses
+    const balanceCents = this.calculateTotalBalance(expenses); // UNPAID expenses
+    const totalExpenses = spentCents + balanceCents;
+    const remainingCents = this.calculateRemaining(allowanceCents, totalExpenses);
 
     return {
       year,
@@ -98,6 +109,7 @@ export const CalculationService = {
       allowanceCents,
       allowanceOverrideCents,
       spentCents,
+      balanceCents,
       remainingCents,
       expenseCount: expenses.filter((e) => !e.deletedAt).length,
     };

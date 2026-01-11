@@ -12,6 +12,7 @@ function mapToExpense(entity: ExpenseEntity): Expense {
     amountCents: entity.amount_cents,
     note: entity.note,
     expenseDate: entity.expense_date,
+    isPaid: entity.is_paid === 1,
     createdAt: entity.created_at,
     updatedAt: entity.updated_at,
     deletedAt: entity.deleted_at,
@@ -70,12 +71,24 @@ export const ExpenseRepository = {
   },
 
   /**
-   * Get total spent for a month
+   * Get total spent for a month (PAID expenses only)
    */
   async getTotalForMonth(monthId: number): Promise<number> {
     const db = await getDatabase();
     const result = await db.getFirstAsync<{ total: number | null }>(
-      "SELECT SUM(amount_cents) as total FROM expenses WHERE month_id = ? AND deleted_at IS NULL",
+      "SELECT SUM(amount_cents) as total FROM expenses WHERE month_id = ? AND deleted_at IS NULL AND is_paid = 1",
+      [monthId]
+    );
+    return result?.total ?? 0;
+  },
+
+  /**
+   * Get total balance for a month (UNPAID expenses only)
+   */
+  async getBalanceForMonth(monthId: number): Promise<number> {
+    const db = await getDatabase();
+    const result = await db.getFirstAsync<{ total: number | null }>(
+      "SELECT SUM(amount_cents) as total FROM expenses WHERE month_id = ? AND deleted_at IS NULL AND is_paid = 0",
       [monthId]
     );
     return result?.total ?? 0;
@@ -146,6 +159,10 @@ export const ExpenseRepository = {
       updates.push("expense_date = ?");
       values.push(dto.expenseDate);
     }
+    if (dto.isPaid !== undefined) {
+      updates.push("is_paid = ?");
+      values.push(dto.isPaid ? 1 : 0);
+    }
 
     if (updates.length === 0) {
       const existing = await this.findById(id);
@@ -193,5 +210,31 @@ export const ExpenseRepository = {
       [monthId]
     );
     return result?.count ?? 0;
+  },
+
+  /**
+   * Bulk update paid status for multiple expenses
+   */
+  async bulkUpdatePaidStatus(ids: number[], isPaid: boolean): Promise<void> {
+    if (ids.length === 0) return;
+    const db = await getDatabase();
+    const placeholders = ids.map(() => "?").join(",");
+    await db.runAsync(`UPDATE expenses SET is_paid = ?, updated_at = datetime('now') WHERE id IN (${placeholders})`, [
+      isPaid ? 1 : 0,
+      ...ids,
+    ]);
+  },
+
+  /**
+   * Bulk soft delete expenses
+   */
+  async bulkDelete(ids: number[]): Promise<void> {
+    if (ids.length === 0) return;
+    const db = await getDatabase();
+    const placeholders = ids.map(() => "?").join(",");
+    await db.runAsync(
+      `UPDATE expenses SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id IN (${placeholders})`,
+      ids
+    );
   },
 };
