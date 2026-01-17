@@ -215,7 +215,7 @@ async function initializeDatabase(db: SQLite.SQLiteDatabase): Promise<void> {
 
 async function seedDefaultCategories(db: SQLite.SQLiteDatabase): Promise<void> {
   const count = await db.getFirstAsync<{ count: number }>(
-    "SELECT COUNT(*) as count FROM categories WHERE deleted_at IS NULL"
+    "SELECT COUNT(*) as count FROM categories WHERE deleted_at IS NULL",
   );
 
   if (count && count.count === 0) {
@@ -443,7 +443,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             remainingCents: remaining,
             expenseCount: expenses.length,
           };
-        })
+        }),
       );
 
       set({
@@ -520,7 +520,21 @@ Display:
 - Amount input with validation
 - Delete confirmation
 
-### 4.7 Build Allowance Sources Screen
+### 4.7 Build Categorized Expense List
+
+- SectionList grouped by category
+- Collapsible category headers
+- Category totals in headers
+- Parent paid status (derived from children)
+
+### 4.8 Build Selection Mode
+
+- Long-press to enter selection mode
+- Multi-select with checkboxes
+- Bulk actions: Mark Paid, Mark Unpaid, Delete
+- Selection bar at bottom
+
+### 4.9 Build Allowance Sources Screen
 
 - List of income sources
 - Add/Edit/Delete functionality
@@ -664,6 +678,28 @@ export async function importData(jsonString: string): Promise<ImportResult> {
 - Add haptic feedback
 - Ensure consistent styling
 - Test on various screen sizes
+
+### 6.5 App Size Optimization
+
+Key optimizations in `android/gradle.properties`:
+
+```properties
+# ARM only (removes x86 binaries, ~40-60 MB savings)
+reactNativeArchitectures=armeabi-v7a,arm64-v8a
+
+# Enable R8 minification and resource shrinking
+android.enableMinifyInReleaseBuilds=true
+android.enableShrinkResourcesInReleaseBuilds=true
+
+# Compress JS bundle
+android.enableBundleCompression=true
+
+# Disable unused image formats
+expo.gif.enabled=false
+expo.webp.enabled=false
+```
+
+**Target**: Production APK ~57 MB
 
 ### Phase 6 Verification
 

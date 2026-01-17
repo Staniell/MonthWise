@@ -238,3 +238,34 @@ type(scope): short description
 - No sensitive data logged in development
 - Clear data on app uninstall (default behavior)
 - Optional: Add app lock with biometrics (future enhancement)
+
+## EAS Build & Versioning
+
+### Version Files (Must Stay in Sync)
+
+| File                       | Fields                           |
+| -------------------------- | -------------------------------- |
+| `app.json`                 | `version`, `android.versionCode` |
+| `android/app/build.gradle` | `versionCode`, `versionName`     |
+
+### Build Profiles (eas.json)
+
+| Profile     | Purpose                    | Output | Channel    |
+| ----------- | -------------------------- | ------ | ---------- |
+| development | Dev client with hot reload | N/A    | N/A        |
+| preview     | Internal testing           | APK    | preview    |
+| production  | User distribution          | APK    | production |
+
+### Versioning Rules
+
+1. Increment `versionCode` for every build submitted to users
+2. Increment `version` (semver) for user-facing changes
+3. Keep `app.json` and `build.gradle` versions in sync
+4. Use `eas update` for JS-only changes (no versionCode bump needed)
+
+### Size Optimization Targets
+
+| Metric            | Target |
+| ----------------- | ------ |
+| Production APK    | ~57 MB |
+| Development Build | ~80 MB |

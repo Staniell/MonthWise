@@ -15,7 +15,6 @@ description: Database schema changes, migrations, and repository patterns for Mo
 ### 2. Steps for Schema Changes
 
 1. **Plan the change**
-
    - Document what needs to change and why
    - Consider impact on existing data
 
@@ -49,12 +48,23 @@ description: Database schema changes, migrations, and repository patterns for Mo
    }
    ```
 
-5. **Update TypeScript types**
+5. **Example: Adding is_paid column**
 
+   ```typescript
+   // src/database/migrations.ts
+   export async function migrateV2toV3(db: SQLiteDatabase): Promise<void> {
+     // Add paid status tracking to expenses
+     await db.execAsync(`
+       ALTER TABLE expenses ADD COLUMN is_paid INTEGER NOT NULL DEFAULT 0;
+     `);
+   }
+   ```
+
+6. **Update TypeScript types**
    - Add new field to entity type
    - Update DTOs if needed
 
-6. **Test migration**
+7. **Test migration**
    - Create data with old schema
    - Run migration
    - Verify data preserved
@@ -98,7 +108,7 @@ export const ExpenseRepository = {
       `SELECT * FROM expenses 
        WHERE month_id = ? AND deleted_at IS NULL 
        ORDER BY expense_date DESC, created_at DESC`,
-      [monthId]
+      [monthId],
     );
     return results.map(mapToExpense);
   },
@@ -108,7 +118,7 @@ export const ExpenseRepository = {
     const result = await db.runAsync(
       `INSERT INTO expenses (month_id, category_id, amount_cents, note, expense_date)
        VALUES (?, ?, ?, ?, ?)`,
-      [dto.monthId, dto.categoryId, dto.amountCents, dto.note ?? null, dto.expenseDate]
+      [dto.monthId, dto.categoryId, dto.amountCents, dto.note ?? null, dto.expenseDate],
     );
     return this.findById(result.lastInsertRowId)!;
   },
@@ -181,7 +191,7 @@ await db.getAllAsync("SELECT * FROM expenses WHERE deleted_at IS NULL");
 
 // Include deleted for export/admin
 await db.getAllAsync(
-  "SELECT * FROM expenses" // No deleted_at filter
+  "SELECT * FROM expenses", // No deleted_at filter
 );
 ```
 
@@ -245,7 +255,7 @@ async function bulkCreateExpenses(expenses: CreateExpenseDTO[]) {
       await db.runAsync(
         `INSERT INTO expenses (month_id, category_id, amount_cents, note)
          VALUES (?, ?, ?, ?)`,
-        [expense.monthId, expense.categoryId, expense.amountCents, expense.note]
+        [expense.monthId, expense.categoryId, expense.amountCents, expense.note],
       );
     }
     await db.execAsync("COMMIT");

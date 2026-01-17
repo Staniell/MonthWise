@@ -84,6 +84,38 @@ npx expo start --dev-client
 
 ---
 
+## EAS Build Commands
+
+### Preview Build (Internal Testing APK)
+
+```bash
+// turbo
+eas build --platform android --profile preview
+```
+
+### Production Build (User Distribution)
+
+```bash
+// turbo
+eas build --platform android --profile production --non-interactive
+```
+
+### Local Release Build (Fast Local Testing)
+
+```bash
+// turbo
+npm run android:release
+```
+
+### OTA Update (JS-only changes, no native rebuild)
+
+```bash
+// turbo
+eas update --branch production --message "Brief description"
+```
+
+---
+
 ## Pre-Commit Checklist
 
 // turbo-all
