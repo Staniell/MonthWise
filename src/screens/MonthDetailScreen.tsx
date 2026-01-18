@@ -26,6 +26,8 @@ export const MonthDetailScreen = () => {
     defaultAllowanceCents,
     bulkUpdateExpensePaidStatus,
     bulkDeleteExpenses,
+    profiles,
+    currentProfileId,
   } = useAppStore();
 
   const { showAddExpenseModal, showEditExpenseModal, showVerifyExpensesModal } = useUIStore();
@@ -243,15 +245,22 @@ export const MonthDetailScreen = () => {
               icon={<Ionicons name="arrow-back" size={20} color={colors.primary} />}
             />
           ),
-          headerRight: () => (
-            <Button
-              title="Verify"
-              variant="ghost"
-              size="s"
-              onPress={showVerifyExpensesModal}
-              icon={<Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />}
-            />
-          ),
+          headerRight: () => {
+            const currentProfile = profiles.find((p) => p.id === currentProfileId);
+            const hasPassword = !!currentProfile?.passwordHash;
+
+            if (!hasPassword) return null;
+
+            return (
+              <Button
+                title="Verify"
+                variant="ghost"
+                size="s"
+                onPress={showVerifyExpensesModal}
+                icon={<Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />}
+              />
+            );
+          },
         }}
       />
 
