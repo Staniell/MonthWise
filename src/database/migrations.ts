@@ -16,6 +16,9 @@ export async function runMigrations(db: SQLite.SQLiteDatabase, fromVersion: numb
 
   // Add is_paid column to expenses
   await migrateAddIsPaidToExpenses(db);
+
+  // Add password_hash to profiles for per-profile security
+  await migrateAddPasswordToProfiles(db);
 }
 
 /**
@@ -61,7 +64,7 @@ async function migrateAddProfiles(db: SQLite.SQLiteDatabase): Promise<void> {
   try {
     // Check if profiles table exists
     const tables = await db.getAllAsync<{ name: string }>(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='profiles'"
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='profiles'",
     );
 
     if (tables.length === 0) {
@@ -128,6 +131,33 @@ async function migrateAddIsPaidToExpenses(db: SQLite.SQLiteDatabase): Promise<vo
     }
   } catch (error: unknown) {
     console.error("MIGRATION ERROR (is_paid):", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (!errorMessage.includes("duplicate column")) {
+      throw error;
+    }
+  }
+
+  console.log("=== MIGRATION END ===");
+}
+
+/**
+ * Migration: Add password_hash column to profiles for per-profile security
+ */
+async function migrateAddPasswordToProfiles(db: SQLite.SQLiteDatabase): Promise<void> {
+  console.log("=== MIGRATION START: Adding password_hash to profiles ===");
+
+  try {
+    const tableInfo = await db.getAllAsync<{ name: string }>("PRAGMA table_info(profiles)");
+    const hasPasswordHash = tableInfo.some((col) => col.name === "password_hash");
+
+    if (!hasPasswordHash) {
+      await db.runAsync("ALTER TABLE profiles ADD COLUMN password_hash TEXT");
+      console.log("SUCCESS: Added password_hash column to profiles");
+    } else {
+      console.log("password_hash column already exists, skipping");
+    }
+  } catch (error: unknown) {
+    console.error("MIGRATION ERROR (password_hash):", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (!errorMessage.includes("duplicate column")) {
       throw error;

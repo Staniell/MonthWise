@@ -3,12 +3,14 @@ import { getDatabase } from "../connection";
 export interface Profile {
   id: number;
   name: string;
+  passwordHash: string | null;
   createdAt: string;
 }
 
 interface ProfileRow {
   id: number;
   name: string;
+  password_hash: string | null;
   created_at: string;
 }
 
@@ -73,7 +75,37 @@ export const ProfileRepository = {
       return mapRowToProfile(existing);
     }
     await db.runAsync("INSERT INTO profiles (id, name) VALUES (1, 'Default')");
-    return { id: 1, name: "Default", createdAt: new Date().toISOString() };
+    return { id: 1, name: "Default", passwordHash: null, createdAt: new Date().toISOString() };
+  },
+
+  // --- Security Methods ---
+
+  /**
+   * Set password for a profile
+   */
+  async setPassword(id: number, passwordHash: string): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync("UPDATE profiles SET password_hash = ? WHERE id = ?", [passwordHash, id]);
+  },
+
+  /**
+   * Remove password from a profile
+   */
+  async removePassword(id: number): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync("UPDATE profiles SET password_hash = NULL WHERE id = ?", [id]);
+  },
+
+  /**
+   * Check if a profile has a password set
+   */
+  async hasPassword(id: number): Promise<boolean> {
+    const db = await getDatabase();
+    const row = await db.getFirstAsync<{ password_hash: string | null }>(
+      "SELECT password_hash FROM profiles WHERE id = ?",
+      [id],
+    );
+    return row?.password_hash !== null && row?.password_hash !== undefined;
   },
 };
 
@@ -81,6 +113,7 @@ function mapRowToProfile(row: ProfileRow): Profile {
   return {
     id: row.id,
     name: row.name,
+    passwordHash: row.password_hash,
     createdAt: row.created_at,
   };
 }
