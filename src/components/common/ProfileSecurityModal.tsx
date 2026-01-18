@@ -4,7 +4,7 @@ import { useAppStore, useUIStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import { Alert, Modal, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Modal, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 import { AppText } from "./AppText";
 import { Button } from "./Button";
 import { Input } from "./Input";
@@ -270,16 +270,18 @@ export const ProfileSecurityModal = () => {
   return (
     <Modal visible={isProfileSecurityModalVisible} animationType="slide" transparent>
       <View style={styles.overlay}>
-        <View style={styles.modal}>
-          <View style={styles.header}>
-            <AppText variant="heading2">Profile Security</AppText>
-            <TouchableOpacity onPress={hideProfileSecurityModal}>
-              <Ionicons name="close" size={24} color={colors.textMuted} />
-            </TouchableOpacity>
-          </View>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardView}>
+          <View style={styles.modal}>
+            <View style={styles.header}>
+              <AppText variant="heading2">Profile Security</AppText>
+              <TouchableOpacity onPress={hideProfileSecurityModal}>
+                <Ionicons name="close" size={24} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
 
-          <View style={styles.content}>{renderContent()}</View>
-        </View>
+            <View style={styles.content}>{renderContent()}</View>
+          </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -289,6 +291,10 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  keyboardView: {
+    width: "100%",
     justifyContent: "flex-end",
   },
   modal: {

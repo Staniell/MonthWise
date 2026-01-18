@@ -4,7 +4,7 @@ import { colors, layout } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
-import { Alert, Modal, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Modal, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 import { AppText } from "../common/AppText";
 import { Button } from "../common/Button";
 import { Input } from "../common/Input";
@@ -55,66 +55,73 @@ export const VerifyExpensesModal = () => {
   return (
     <Modal visible={isVerifyExpensesModalVisible} animationType="slide" transparent>
       <View style={styles.overlay}>
-        <View style={styles.modal}>
-          <View style={styles.header}>
-            <AppText variant="heading2">Verify Expenses</AppText>
-            <TouchableOpacity onPress={hideVerifyExpensesModal}>
-              <Ionicons name="close" size={24} color={colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.content}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="shield-checkmark" size={48} color={colors.primary} />
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardView}>
+          <View style={styles.modal}>
+            <View style={styles.header}>
+              <AppText variant="heading2">Verify Expenses</AppText>
+              <TouchableOpacity onPress={hideVerifyExpensesModal}>
+                <Ionicons name="close" size={24} color={colors.textMuted} />
+              </TouchableOpacity>
             </View>
 
-            <AppText variant="body" color={colors.textMuted} align="center" style={{ marginBottom: layout.spacing.m }}>
-              {unverifiedCount > 0
-                ? `Mark ${unverifiedCount} unverified expense${unverifiedCount > 1 ? "s" : ""} as verified`
-                : "All expenses are already verified"}
-            </AppText>
+            <View style={styles.content}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="shield-checkmark" size={48} color={colors.primary} />
+              </View>
 
-            {unverifiedCount > 0 && (
-              <>
-                {hasPassword ? (
-                  <>
+              <AppText
+                variant="body"
+                color={colors.textMuted}
+                align="center"
+                style={{ marginBottom: layout.spacing.m }}
+              >
+                {unverifiedCount > 0
+                  ? `Mark ${unverifiedCount} unverified expense${unverifiedCount > 1 ? "s" : ""} as verified`
+                  : "All expenses are already verified"}
+              </AppText>
+
+              {unverifiedCount > 0 && (
+                <>
+                  {hasPassword ? (
+                    <>
+                      <AppText
+                        variant="caption"
+                        color={colors.textMuted}
+                        align="center"
+                        style={{ marginBottom: layout.spacing.m }}
+                      >
+                        Enter your profile password to verify
+                      </AppText>
+                      <Input
+                        placeholder="Password"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                        containerStyle={{ marginBottom: layout.spacing.l }}
+                      />
+                    </>
+                  ) : (
                     <AppText
                       variant="caption"
-                      color={colors.textMuted}
+                      color={colors.warning}
                       align="center"
-                      style={{ marginBottom: layout.spacing.m }}
+                      style={{ marginBottom: layout.spacing.l }}
                     >
-                      Enter your profile password to verify
+                      No password set. Consider adding one in Profile Security.
                     </AppText>
-                    <Input
-                      placeholder="Password"
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry
-                      containerStyle={{ marginBottom: layout.spacing.l }}
-                    />
-                  </>
-                ) : (
-                  <AppText
-                    variant="caption"
-                    color={colors.warning}
-                    align="center"
-                    style={{ marginBottom: layout.spacing.l }}
-                  >
-                    No password set. Consider adding one in Profile Security.
-                  </AppText>
-                )}
+                  )}
 
-                <Button
-                  title="Verify All"
-                  onPress={handleVerify}
-                  loading={isLoading}
-                  disabled={hasPassword && password.length === 0}
-                />
-              </>
-            )}
+                  <Button
+                    title="Verify All"
+                    onPress={handleVerify}
+                    loading={isLoading}
+                    disabled={hasPassword && password.length === 0}
+                  />
+                </>
+              )}
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -124,6 +131,10 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  keyboardView: {
+    width: "100%",
     justifyContent: "flex-end",
   },
   modal: {
