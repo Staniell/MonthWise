@@ -6,7 +6,6 @@ import React, { useEffect, useState } from "react";
 import { Alert, Modal, StyleSheet, TouchableOpacity, View } from "react-native";
 import { AppText } from "./AppText";
 import { Button } from "./Button";
-import { Input } from "./Input";
 
 export const ProfileSecurityModal = () => {
   const { isProfileSecurityModalVisible, hideProfileSecurityModal } = useUIStore();
@@ -15,8 +14,6 @@ export const ProfileSecurityModal = () => {
 
   const currentProfile = profiles.find((p) => p.id === currentProfileId);
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState("");
@@ -25,8 +22,6 @@ export const ProfileSecurityModal = () => {
   useEffect(() => {
     if (isProfileSecurityModalVisible) {
       checkBiometricAvailability();
-      setPassword("");
-      setConfirmPassword("");
       setIsAuthenticated(!currentProfileIsSecured); // If not secured, no auth needed
     }
   }, [isProfileSecurityModalVisible, currentProfileIsSecured]);
@@ -40,42 +35,17 @@ export const ProfileSecurityModal = () => {
   };
 
   const handleAuthenticate = async () => {
+    if (!biometricAvailable) {
+      Alert.alert("Biometrics Required", "Please enroll fingerprint in device settings to use security features.");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      // Try biometric first
-      if (biometricAvailable) {
-        const success = await AuthService.authenticateWithBiometric("Authenticate to access security settings");
-        if (success) {
-          setIsAuthenticated(true);
-          setIsLoading(false);
-          return;
-        }
+      const success = await AuthService.authenticateWithBiometric("Authenticate to access security settings");
+      if (success) {
+        setIsAuthenticated(true);
       }
-
-      // Fall back to password prompt
-      Alert.prompt(
-        "Enter Password",
-        "Enter your security password to continue",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Verify",
-            onPress: async (inputPassword?: string) => {
-              if (!inputPassword || !currentProfile?.authPasswordHash) {
-                Alert.alert("Error", "Invalid password");
-                return;
-              }
-              const valid = await AuthService.verifyPassword(inputPassword, currentProfile.authPasswordHash);
-              if (valid) {
-                setIsAuthenticated(true);
-              } else {
-                Alert.alert("Error", "Incorrect password");
-              }
-            },
-          },
-        ],
-        "secure-text",
-      );
     } catch (error) {
       console.error("Authentication error:", error);
       Alert.alert("Error", "Authentication failed");
@@ -85,20 +55,20 @@ export const ProfileSecurityModal = () => {
   };
 
   const handleEnableSecurity = async () => {
-    if (password.length < 4) {
-      Alert.alert("Error", "Password must be at least 4 characters");
-      return;
-    }
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+    if (!biometricAvailable) {
+      Alert.alert("Biometrics Required", "Please enroll fingerprint in device settings first.");
       return;
     }
 
+    // Test biometric before enabling
     setIsLoading(true);
     try {
-      await enableProfileSecurity(password);
-      Alert.alert("Success", "Security enabled! You can now use password or fingerprint to verify expenses.");
-      hideProfileSecurityModal();
+      const success = await AuthService.authenticateWithBiometric("Verify fingerprint to enable security");
+      if (success) {
+        await enableProfileSecurity();
+        Alert.alert("Success", `Security enabled! You can now verify expenses using ${biometricType.toLowerCase()}.`);
+        hideProfileSecurityModal();
+      }
     } catch (error) {
       console.error("Enable security error:", error);
       Alert.alert("Error", "Failed to enable security");
@@ -175,7 +145,7 @@ export const ProfileSecurityModal = () => {
                 Authenticate to manage security settings
               </AppText>
               <Button
-                title={biometricAvailable ? `Use ${biometricType} or Password` : "Enter Password"}
+                title={`Use ${biometricType || "Fingerprint"}`}
                 onPress={handleAuthenticate}
                 loading={isLoading}
                 icon={<Ionicons name="finger-print" size={20} color={colors.primaryForeground} />}
@@ -185,78 +155,59 @@ export const ProfileSecurityModal = () => {
             // Authenticated - show disable option
             <View style={styles.content}>
               <AppText variant="body" color={colors.textMuted} style={{ marginBottom: layout.spacing.l }}>
-                Security is currently enabled. You can verify expenses using password or{" "}
-                {biometricAvailable ? biometricType.toLowerCase() : "biometric"}.
+                Security is currently enabled. Expenses can be verified using{" "}
+                {biometricType.toLowerCase() || "fingerprint"}.
               </AppText>
               <Button title="Remove Security" variant="danger" onPress={handleDisableSecurity} loading={isLoading} />
             </View>
           ) : (
-            // Not secured - show enable form
+            // Not secured - show enable option
             <View style={styles.content}>
-              <AppText variant="body" color={colors.textMuted} style={{ marginBottom: layout.spacing.m }}>
-                Set a password to enable expense verification. Once enabled, you can verify expenses using your password
-                {biometricAvailable ? ` or ${biometricType.toLowerCase()}` : ""}.
-              </AppText>
-
-              {/* Biometric status section */}
-              <View style={styles.biometricSection}>
-                <View style={styles.biometricHeader}>
-                  <Ionicons
-                    name="finger-print"
-                    size={24}
-                    color={biometricAvailable ? colors.success : colors.textMuted}
-                  />
-                  <View style={{ marginLeft: layout.spacing.s, flex: 1 }}>
-                    <AppText variant="bodyMedium">
-                      {biometricAvailable ? `${biometricType} Ready` : "Fingerprint Not Available"}
-                    </AppText>
-                    <AppText variant="caption" color={colors.textMuted}>
-                      {biometricAvailable
-                        ? "Will be enabled automatically with password"
-                        : "Enroll fingerprint in device settings to use"}
-                    </AppText>
+              {biometricAvailable ? (
+                <>
+                  {/* Biometric ready section */}
+                  <View style={styles.biometricSection}>
+                    <View style={styles.biometricHeader}>
+                      <Ionicons name="finger-print" size={32} color={colors.success} />
+                      <View style={{ marginLeft: layout.spacing.m, flex: 1 }}>
+                        <AppText variant="bodyMedium">{biometricType} Ready</AppText>
+                        <AppText variant="caption" color={colors.textMuted}>
+                          Use fingerprint to verify your expenses
+                        </AppText>
+                      </View>
+                      <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+                    </View>
                   </View>
-                  {biometricAvailable && <Ionicons name="checkmark-circle" size={24} color={colors.success} />}
-                </View>
 
-                {biometricAvailable && (
-                  <TouchableOpacity
-                    style={styles.testBiometricButton}
-                    onPress={async () => {
-                      const success = await AuthService.authenticateWithBiometric("Test fingerprint");
-                      if (success) {
-                        Alert.alert("Success", `${biometricType} is working correctly!`);
-                      } else {
-                        Alert.alert("Cancelled", "Fingerprint test was cancelled or failed");
-                      }
-                    }}
+                  <AppText variant="body" color={colors.textMuted} style={{ marginBottom: layout.spacing.l }}>
+                    Enable security to require {biometricType.toLowerCase()} verification before marking expenses as
+                    verified.
+                  </AppText>
+
+                  <Button
+                    title={`Enable ${biometricType} Security`}
+                    onPress={handleEnableSecurity}
+                    loading={isLoading}
+                    icon={<Ionicons name="shield-checkmark" size={20} color={colors.primaryForeground} />}
+                  />
+                </>
+              ) : (
+                // No biometrics available
+                <View style={styles.noBiometricSection}>
+                  <Ionicons name="finger-print" size={48} color={colors.textMuted} />
+                  <AppText variant="bodyMedium" style={{ marginTop: layout.spacing.m }} align="center">
+                    Fingerprint Not Available
+                  </AppText>
+                  <AppText
+                    variant="body"
+                    color={colors.textMuted}
+                    align="center"
+                    style={{ marginTop: layout.spacing.s }}
                   >
-                    <AppText variant="caption" color={colors.primary}>
-                      Test {biometricType}
-                    </AppText>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <Input
-                placeholder="New password (min 4 characters)"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                containerStyle={{ marginBottom: layout.spacing.s }}
-              />
-              <Input
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                containerStyle={{ marginBottom: layout.spacing.l }}
-              />
-              <Button
-                title={biometricAvailable ? `Enable Password + ${biometricType}` : "Enable Password Security"}
-                onPress={handleEnableSecurity}
-                loading={isLoading}
-              />
+                    To enable security features, please enroll your fingerprint in your device settings first.
+                  </AppText>
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -306,15 +257,6 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: layout.spacing.s,
   },
-  biometricInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: layout.spacing.m,
-    paddingVertical: layout.spacing.s,
-    paddingHorizontal: layout.spacing.m,
-    backgroundColor: colors.success + "10",
-    borderRadius: layout.borderRadius.m,
-  },
   biometricSection: {
     backgroundColor: colors.background,
     borderRadius: layout.borderRadius.m,
@@ -325,12 +267,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  testBiometricButton: {
-    marginTop: layout.spacing.s,
-    alignSelf: "flex-start",
-    paddingVertical: layout.spacing.xs,
-    paddingHorizontal: layout.spacing.s,
-    backgroundColor: colors.primary + "15",
-    borderRadius: layout.borderRadius.s,
+  noBiometricSection: {
+    alignItems: "center",
+    paddingVertical: layout.spacing.xl,
   },
 });

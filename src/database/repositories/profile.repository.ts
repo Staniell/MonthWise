@@ -81,11 +81,11 @@ export const ProfileRepository = {
   },
 
   /**
-   * Enable security for a profile (requires password hash)
+   * Enable security for a profile (biometric only)
    */
-  async enableSecurity(id: number, passwordHash: string): Promise<void> {
+  async enableSecurity(id: number): Promise<void> {
     const db = await getDatabase();
-    await db.runAsync("UPDATE profiles SET is_secured = 1, auth_password_hash = ? WHERE id = ?", [passwordHash, id]);
+    await db.runAsync("UPDATE profiles SET is_secured = 1 WHERE id = ?", [id]);
   },
 
   /**

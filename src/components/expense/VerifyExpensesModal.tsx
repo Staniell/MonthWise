@@ -6,17 +6,13 @@ import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
 import { Alert, Modal, StyleSheet, TouchableOpacity, View } from "react-native";
 import { AppText } from "../common/AppText";
-import { Button } from "../common/Button";
-import { Input } from "../common/Input";
 
 export const VerifyExpensesModal = () => {
   const { isVerifyExpensesModalVisible, hideVerifyExpensesModal } = useUIStore();
-  const { verifyAllExpenses, profiles, currentProfileId, selectedMonthExpenses } = useAppStore();
+  const { verifyAllExpenses, selectedMonthExpenses } = useAppStore();
 
-  const currentProfile = profiles.find((p) => p.id === currentProfileId);
   const unverifiedCount = selectedMonthExpenses.filter((e) => !e.isVerified).length;
 
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState("");
@@ -24,7 +20,6 @@ export const VerifyExpensesModal = () => {
   useEffect(() => {
     if (isVerifyExpensesModalVisible) {
       checkBiometricAvailability();
-      setPassword("");
     }
   }, [isVerifyExpensesModalVisible]);
 
@@ -48,32 +43,6 @@ export const VerifyExpensesModal = () => {
       }
     } catch (error) {
       console.error("Biometric verification error:", error);
-      Alert.alert("Error", "Verification failed");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePasswordVerify = async () => {
-    if (!password || !currentProfile?.authPasswordHash) {
-      Alert.alert("Error", "Please enter your password");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const valid = await AuthService.verifyPassword(password, currentProfile.authPasswordHash);
-      if (valid) {
-        await verifyAllExpenses();
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert("Success", "All expenses have been verified!");
-        hideVerifyExpensesModal();
-      } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert("Error", "Incorrect password");
-      }
-    } catch (error) {
-      console.error("Password verification error:", error);
       Alert.alert("Error", "Verification failed");
     } finally {
       setIsLoading(false);
@@ -104,7 +73,6 @@ export const VerifyExpensesModal = () => {
 
             {unverifiedCount > 0 && (
               <>
-                {/* Primary biometric option */}
                 {biometricAvailable ? (
                   <View style={styles.biometricPrimary}>
                     <TouchableOpacity
@@ -133,40 +101,25 @@ export const VerifyExpensesModal = () => {
                   </View>
                 ) : (
                   <View style={styles.noBiometricInfo}>
-                    <Ionicons name="finger-print" size={24} color={colors.textMuted} />
+                    <Ionicons name="finger-print" size={32} color={colors.textMuted} />
+                    <AppText
+                      variant="bodyMedium"
+                      color={colors.textMuted}
+                      align="center"
+                      style={{ marginTop: layout.spacing.m }}
+                    >
+                      Fingerprint Not Available
+                    </AppText>
                     <AppText
                       variant="caption"
                       color={colors.textMuted}
-                      style={{ marginLeft: layout.spacing.s, flex: 1 }}
+                      align="center"
+                      style={{ marginTop: layout.spacing.s }}
                     >
-                      Fingerprint not available. Enroll in device settings to use.
+                      Enroll fingerprint in device settings to verify expenses.
                     </AppText>
                   </View>
                 )}
-
-                <View style={styles.dividerContainer}>
-                  <View style={styles.divider} />
-                  <AppText variant="caption" color={colors.textMuted} style={{ paddingHorizontal: layout.spacing.s }}>
-                    {biometricAvailable ? "or use password" : "Use password"}
-                  </AppText>
-                  <View style={styles.divider} />
-                </View>
-
-                <Input
-                  placeholder="Enter password"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  containerStyle={{ marginBottom: layout.spacing.m }}
-                />
-
-                <Button
-                  title="Verify with Password"
-                  variant={biometricAvailable ? "secondary" : "primary"}
-                  onPress={handlePasswordVerify}
-                  loading={isLoading}
-                  disabled={!password}
-                />
               </>
             )}
           </View>
@@ -203,16 +156,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: layout.spacing.l,
   },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: layout.spacing.m,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
   biometricPrimary: {
     alignItems: "center",
     marginBottom: layout.spacing.m,
@@ -226,11 +169,9 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   noBiometricInfo: {
-    flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.background,
-    padding: layout.spacing.m,
+    padding: layout.spacing.l,
     borderRadius: layout.borderRadius.m,
-    marginBottom: layout.spacing.m,
   },
 });

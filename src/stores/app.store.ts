@@ -94,7 +94,7 @@ interface AppState {
   renameProfile: (id: number, name: string) => Promise<void>;
 
   // --- Actions: Security ---
-  enableProfileSecurity: (password: string) => Promise<void>;
+  enableProfileSecurity: () => Promise<void>;
   disableProfileSecurity: () => Promise<void>;
   verifyAllExpenses: () => Promise<void>;
   loadSecurityStatus: () => Promise<void>;
@@ -413,11 +413,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   // --- Security ---
-  enableProfileSecurity: async (password: string) => {
+  enableProfileSecurity: async () => {
     const { currentProfileId } = get();
-    const { hashPassword } = await import("@/services/auth.service");
-    const hash = await hashPassword(password);
-    await ProfileRepository.enableSecurity(currentProfileId, hash);
+    await ProfileRepository.enableSecurity(currentProfileId);
     set({ currentProfileIsSecured: true });
     await get().loadProfiles();
   },
