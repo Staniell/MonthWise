@@ -1,4 +1,3 @@
-import { ExpenseRepository } from "@/database";
 import { AuthService } from "@/services";
 import { useAppStore, useUIStore } from "@/stores";
 import { colors, layout } from "@/theme";
@@ -12,11 +11,11 @@ import { Input } from "../common/Input";
 
 export const VerifyExpensesModal = () => {
   const { isVerifyExpensesModalVisible, hideVerifyExpensesModal } = useUIStore();
-  const { profiles, currentProfileId, selectedMonthExpenses, selectedMonthId, refreshData } = useAppStore();
+  const { profiles, currentProfileId, selectedMonthExpenses, bulkUpdateExpenseVerifiedStatus } = useAppStore();
 
   const currentProfile = profiles.find((p) => p.id === currentProfileId);
   const hasPassword = !!currentProfile?.passwordHash;
-  const unpaidCount = selectedMonthExpenses.filter((e) => !e.isPaid).length;
+  const unverifiedCount = selectedMonthExpenses.filter((e) => !e.isVerified).length;
 
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +27,6 @@ export const VerifyExpensesModal = () => {
   }, [isVerifyExpensesModalVisible]);
 
   const handleVerify = async () => {
-    // If profile has a password, verify it first
     if (hasPassword && currentProfile?.passwordHash) {
       const isValid = await AuthService.verifyPassword(password, currentProfile.passwordHash);
       if (!isValid) {
@@ -39,14 +37,12 @@ export const VerifyExpensesModal = () => {
 
     setIsLoading(true);
     try {
-      // Mark all unpaid expenses as paid
-      const unpaidIds = selectedMonthExpenses.filter((e) => !e.isPaid).map((e) => e.id);
-      if (unpaidIds.length > 0) {
-        await ExpenseRepository.bulkUpdatePaidStatus(unpaidIds, true);
-        await refreshData();
+      const unverifiedIds = selectedMonthExpenses.filter((e) => !e.isVerified).map((e) => e.id);
+      if (unverifiedIds.length > 0) {
+        await bulkUpdateExpenseVerifiedStatus(unverifiedIds, true);
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Success", `${unpaidIds.length} expense(s) marked as paid!`);
+      Alert.alert("Success", `${unverifiedIds.length} expense(s) verified!`);
       hideVerifyExpensesModal();
     } catch (error) {
       console.error("Verify expenses error:", error);
@@ -61,7 +57,7 @@ export const VerifyExpensesModal = () => {
       <View style={styles.overlay}>
         <View style={styles.modal}>
           <View style={styles.header}>
-            <AppText variant="heading2">Verify & Pay Expenses</AppText>
+            <AppText variant="heading2">Verify Expenses</AppText>
             <TouchableOpacity onPress={hideVerifyExpensesModal}>
               <Ionicons name="close" size={24} color={colors.textMuted} />
             </TouchableOpacity>
@@ -73,12 +69,12 @@ export const VerifyExpensesModal = () => {
             </View>
 
             <AppText variant="body" color={colors.textMuted} align="center" style={{ marginBottom: layout.spacing.m }}>
-              {unpaidCount > 0
-                ? `Mark ${unpaidCount} unpaid expense${unpaidCount > 1 ? "s" : ""} as paid`
-                : "All expenses are already paid"}
+              {unverifiedCount > 0
+                ? `Mark ${unverifiedCount} unverified expense${unverifiedCount > 1 ? "s" : ""} as verified`
+                : "All expenses are already verified"}
             </AppText>
 
-            {unpaidCount > 0 && (
+            {unverifiedCount > 0 && (
               <>
                 {hasPassword ? (
                   <>
@@ -110,7 +106,7 @@ export const VerifyExpensesModal = () => {
                 )}
 
                 <Button
-                  title="Mark All as Paid"
+                  title="Verify All"
                   onPress={handleVerify}
                   loading={isLoading}
                   disabled={hasPassword && password.length === 0}

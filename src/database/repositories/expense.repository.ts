@@ -13,6 +13,7 @@ function mapToExpense(entity: ExpenseEntity): Expense {
     note: entity.note,
     expenseDate: entity.expense_date,
     isPaid: entity.is_paid === 1,
+    isVerified: entity.is_verified === 1,
     createdAt: entity.created_at,
     updatedAt: entity.updated_at,
     deletedAt: entity.deleted_at,
@@ -40,7 +41,7 @@ export const ExpenseRepository = {
       `SELECT * FROM expenses 
        WHERE month_id = ? AND deleted_at IS NULL 
        ORDER BY expense_date DESC, created_at DESC`,
-      [monthId]
+      [monthId],
     );
     return results.map(mapToExpense);
   },
@@ -54,7 +55,7 @@ export const ExpenseRepository = {
       `SELECT * FROM expenses 
        WHERE month_id = ? AND category_id = ? AND deleted_at IS NULL 
        ORDER BY expense_date DESC, created_at DESC`,
-      [monthId, categoryId]
+      [monthId, categoryId],
     );
     return results.map(mapToExpense);
   },
@@ -65,7 +66,7 @@ export const ExpenseRepository = {
   async findAll(): Promise<Expense[]> {
     const db = await getDatabase();
     const results = await db.getAllAsync<ExpenseEntity>(
-      "SELECT * FROM expenses ORDER BY expense_date DESC, created_at DESC"
+      "SELECT * FROM expenses ORDER BY expense_date DESC, created_at DESC",
     );
     return results.map(mapToExpense);
   },
@@ -77,7 +78,7 @@ export const ExpenseRepository = {
     const db = await getDatabase();
     const result = await db.getFirstAsync<{ total: number | null }>(
       "SELECT SUM(amount_cents) as total FROM expenses WHERE month_id = ? AND deleted_at IS NULL AND is_paid = 1",
-      [monthId]
+      [monthId],
     );
     return result?.total ?? 0;
   },
@@ -89,7 +90,7 @@ export const ExpenseRepository = {
     const db = await getDatabase();
     const result = await db.getFirstAsync<{ total: number | null }>(
       "SELECT SUM(amount_cents) as total FROM expenses WHERE month_id = ? AND deleted_at IS NULL AND is_paid = 0",
-      [monthId]
+      [monthId],
     );
     return result?.total ?? 0;
   },
@@ -105,7 +106,7 @@ export const ExpenseRepository = {
        WHERE month_id = ? AND deleted_at IS NULL 
        GROUP BY category_id 
        ORDER BY total DESC`,
-      [monthId]
+      [monthId],
     );
     return results.map((r) => ({ categoryId: r.category_id, total: r.total }));
   },
@@ -125,7 +126,7 @@ export const ExpenseRepository = {
         dto.amountCents,
         dto.note ?? null,
         expenseDate ?? new Date().toISOString().split("T")[0] ?? "",
-      ]
+      ],
     );
 
     const created = await this.findById(result.lastInsertRowId);
@@ -140,33 +141,59 @@ export const ExpenseRepository = {
    */
   async update(id: number, dto: UpdateExpenseDTO): Promise<Expense> {
     const db = await getDatabase();
+    const existing = await this.findById(id);
+    if (!existing) throw new Error("Expense not found");
+
     const updates: string[] = [];
     const values: (string | number | null)[] = [];
+    let shouldResetVerification = false;
 
     if (dto.categoryId !== undefined) {
+      if (dto.categoryId !== existing.categoryId) {
+        shouldResetVerification = true;
+      }
       updates.push("category_id = ?");
       values.push(dto.categoryId);
     }
     if (dto.amountCents !== undefined) {
+      if (dto.amountCents !== existing.amountCents) {
+        shouldResetVerification = true;
+      }
       updates.push("amount_cents = ?");
       values.push(dto.amountCents);
     }
     if (dto.note !== undefined) {
+      if (dto.note !== existing.note) {
+        shouldResetVerification = true;
+      }
       updates.push("note = ?");
       values.push(dto.note);
     }
     if (dto.expenseDate !== undefined) {
+      if (dto.expenseDate !== existing.expenseDate) {
+        shouldResetVerification = true;
+      }
       updates.push("expense_date = ?");
       values.push(dto.expenseDate);
     }
     if (dto.isPaid !== undefined) {
+      // "Only from paid to unpaid will it be removed"
+      if (existing.isPaid && !dto.isPaid) {
+        shouldResetVerification = true;
+      }
       updates.push("is_paid = ?");
       values.push(dto.isPaid ? 1 : 0);
     }
+    if (dto.isVerified !== undefined) {
+      updates.push("is_verified = ?");
+      values.push(dto.isVerified ? 1 : 0);
+      // If we are explicitly setting verification, we override the reset logic
+      shouldResetVerification = false;
+    } else if (shouldResetVerification) {
+      updates.push("is_verified = 0");
+    }
 
     if (updates.length === 0) {
-      const existing = await this.findById(id);
-      if (!existing) throw new Error("Expense not found");
       return existing;
     }
 
@@ -207,7 +234,7 @@ export const ExpenseRepository = {
     const db = await getDatabase();
     const result = await db.getFirstAsync<{ count: number }>(
       "SELECT COUNT(*) as count FROM expenses WHERE month_id = ? AND deleted_at IS NULL",
-      [monthId]
+      [monthId],
     );
     return result?.count ?? 0;
   },
@@ -219,10 +246,32 @@ export const ExpenseRepository = {
     if (ids.length === 0) return;
     const db = await getDatabase();
     const placeholders = ids.map(() => "?").join(",");
-    await db.runAsync(`UPDATE expenses SET is_paid = ?, updated_at = datetime('now') WHERE id IN (${placeholders})`, [
-      isPaid ? 1 : 0,
-      ...ids,
-    ]);
+
+    // Handle verification loss: "Only from paid to unpaid will it be removed"
+    if (!isPaid) {
+      await db.runAsync(
+        `UPDATE expenses SET is_paid = 0, is_verified = 0, updated_at = datetime('now') WHERE id IN (${placeholders})`,
+        ids,
+      );
+    } else {
+      await db.runAsync(
+        `UPDATE expenses SET is_paid = 1, updated_at = datetime('now') WHERE id IN (${placeholders})`,
+        ids,
+      );
+    }
+  },
+
+  /**
+   * Bulk update verified status for multiple expenses
+   */
+  async bulkUpdateVerifiedStatus(ids: number[], isVerified: boolean): Promise<void> {
+    if (ids.length === 0) return;
+    const db = await getDatabase();
+    const placeholders = ids.map(() => "?").join(",");
+    await db.runAsync(
+      `UPDATE expenses SET is_verified = ?, updated_at = datetime('now') WHERE id IN (${placeholders})`,
+      [isVerified ? 1 : 0, ...ids],
+    );
   },
 
   /**
@@ -234,7 +283,7 @@ export const ExpenseRepository = {
     const placeholders = ids.map(() => "?").join(",");
     await db.runAsync(
       `UPDATE expenses SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id IN (${placeholders})`,
-      ids
+      ids,
     );
   },
 };

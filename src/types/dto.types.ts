@@ -51,4 +51,5 @@ export interface UpdateExpenseDTO {
   note?: string;
   expenseDate?: string;
   isPaid?: boolean;
+  isVerified?: boolean;
 }

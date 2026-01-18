@@ -73,6 +73,7 @@ interface AppState {
   updateExpense: (id: number, dto: UpdateExpenseDTO) => Promise<Expense>;
   deleteExpense: (id: number) => Promise<void>;
   bulkUpdateExpensePaidStatus: (ids: number[], isPaid: boolean) => Promise<void>;
+  bulkUpdateExpenseVerifiedStatus: (ids: number[], isVerified: boolean) => Promise<void>;
   bulkDeleteExpenses: (ids: number[]) => Promise<void>;
 
   // --- Actions: Categories ---
@@ -313,6 +314,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   bulkUpdateExpensePaidStatus: async (ids: number[], isPaid: boolean) => {
     await ExpenseRepository.bulkUpdatePaidStatus(ids, isPaid);
+    await get().refreshData();
+  },
+  bulkUpdateExpenseVerifiedStatus: async (ids: number[], isVerified: boolean) => {
+    await ExpenseRepository.bulkUpdateVerifiedStatus(ids, isVerified);
     await get().refreshData();
   },
 

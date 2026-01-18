@@ -19,6 +19,36 @@ export async function runMigrations(db: SQLite.SQLiteDatabase, fromVersion: numb
 
   // Add password_hash to profiles for per-profile security
   await migrateAddPasswordToProfiles(db);
+
+  // Add is_verified column to expenses
+  await migrateAddIsVerifiedToExpenses(db);
+}
+
+/**
+ * Migration: Add is_verified column to expenses
+ */
+async function migrateAddIsVerifiedToExpenses(db: SQLite.SQLiteDatabase): Promise<void> {
+  console.log("=== MIGRATION START: Adding is_verified column to expenses ===");
+
+  try {
+    const tableInfo = await db.getAllAsync<{ name: string }>("PRAGMA table_info(expenses)");
+    const hasIsVerified = tableInfo.some((col) => col.name === "is_verified");
+
+    if (!hasIsVerified) {
+      await db.runAsync("ALTER TABLE expenses ADD COLUMN is_verified INTEGER NOT NULL DEFAULT 0");
+      console.log("SUCCESS: Added is_verified column to expenses");
+    } else {
+      console.log("is_verified column already exists, skipping");
+    }
+  } catch (error: unknown) {
+    console.error("MIGRATION ERROR (is_verified):", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (!errorMessage.includes("duplicate column")) {
+      throw error;
+    }
+  }
+
+  console.log("=== MIGRATION END ===");
 }
 
 /**

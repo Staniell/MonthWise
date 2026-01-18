@@ -1,6 +1,7 @@
 import { AppText, Button, Card, FAB, Input } from "@/components/common";
 import { AddExpenseModal } from "@/components/expense/AddExpenseModal";
 import { ExpenseItem } from "@/components/expense/ExpenseItem";
+import { VerifyExpensesModal } from "@/components/expense/VerifyExpensesModal";
 import { useAppStore, useUIStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { ExpenseWithCategory } from "@/types";
@@ -27,7 +28,7 @@ export const MonthDetailScreen = () => {
     bulkDeleteExpenses,
   } = useAppStore();
 
-  const { showAddExpenseModal, showEditExpenseModal } = useUIStore();
+  const { showAddExpenseModal, showEditExpenseModal, showVerifyExpensesModal } = useUIStore();
 
   const currentSummary = monthSummaries.find((m) => m.monthId === selectedMonthId);
   const monthName = currentSummary ? getMonthName(currentSummary.month) : "Month Detail";
@@ -57,20 +58,23 @@ export const MonthDetailScreen = () => {
   const [collapsedCategories, setCollapsedCategories] = useState<Set<number>>(new Set());
 
   // 1. Group expenses
-  const expensesByCategory = expensesWithCategories.reduce((acc, expense) => {
-    const catId = expense.category.id;
-    if (!acc[catId]) {
-      acc[catId] = {
-        category: expense.category,
-        data: [],
-        totalCents: 0,
-        id: catId,
-      };
-    }
-    acc[catId].data.push(expense);
-    acc[catId].totalCents += expense.amountCents;
-    return acc;
-  }, {} as Record<number, { category: any; data: ExpenseWithCategory[]; totalCents: number; id: number }>);
+  const expensesByCategory = expensesWithCategories.reduce(
+    (acc, expense) => {
+      const catId = expense.category.id;
+      if (!acc[catId]) {
+        acc[catId] = {
+          category: expense.category,
+          data: [],
+          totalCents: 0,
+          id: catId,
+        };
+      }
+      acc[catId].data.push(expense);
+      acc[catId].totalCents += expense.amountCents;
+      return acc;
+    },
+    {} as Record<number, { category: any; data: ExpenseWithCategory[]; totalCents: number; id: number }>,
+  );
 
   // 2. Sort categories and expenses
   const sortedSections = Object.values(expensesByCategory)
@@ -78,13 +82,19 @@ export const MonthDetailScreen = () => {
       ...section,
       // Calculate fully paid status
       isFullyPaid: section.data.length > 0 && section.data.every((e) => e.isPaid),
+      // Calculate fully verified status
+      isFullyVerified: section.data.length > 0 && section.data.every((e) => e.isVerified),
       // Sort expenses by id descending (latest first) within category
       data: section.data.sort((a, b) => b.id - a.id),
       // Original count for display even when collapsed
       originalDataCount: section.data.length,
     }))
     .sort((a, b) => {
-      // Sort by Paid status first (Unpaid first)
+      // Sort by Verified status first (Unverified first)
+      if (a.isFullyVerified !== b.isFullyVerified) {
+        return a.isFullyVerified ? 1 : -1;
+      }
+      // Then by Paid status (Unpaid first)
       if (a.isFullyPaid !== b.isFullyPaid) {
         return a.isFullyPaid ? 1 : -1;
       }
@@ -207,7 +217,7 @@ export const MonthDetailScreen = () => {
             setIsSelectionMode(false);
           },
         },
-      ]
+      ],
     );
   };
 
@@ -233,7 +243,15 @@ export const MonthDetailScreen = () => {
               icon={<Ionicons name="arrow-back" size={20} color={colors.primary} />}
             />
           ),
-          headerRight: () => null,
+          headerRight: () => (
+            <Button
+              title="Verify"
+              variant="ghost"
+              size="s"
+              onPress={showVerifyExpensesModal}
+              icon={<Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />}
+            />
+          ),
         }}
       />
 
@@ -260,9 +278,15 @@ export const MonthDetailScreen = () => {
             style={styles.expenseItem}
           />
         )}
-        renderSectionHeader={({ section: { category, totalCents, originalDataCount, isFullyPaid } }) => (
+        renderSectionHeader={({
+          section: { category, totalCents, originalDataCount, isFullyPaid, isFullyVerified },
+        }) => (
           <TouchableOpacity
-            style={[styles.sectionHeader, isFullyPaid && styles.sectionHeaderPaid]}
+            style={[
+              styles.sectionHeader,
+              isFullyPaid && styles.sectionHeaderPaid,
+              isFullyVerified && styles.sectionHeaderVerified,
+            ]}
             onPress={() => toggleCategoryCollapse(category.id)}
             activeOpacity={0.7}
           >
@@ -270,6 +294,8 @@ export const MonthDetailScreen = () => {
               <View style={[styles.categoryIcon, { backgroundColor: (category.color || colors.textMuted) + "20" }]}>
                 {isFullyPaid ? (
                   <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+                ) : isFullyVerified ? (
+                  <Ionicons name="shield-checkmark" size={24} color={colors.primary} />
                 ) : (
                   <AppText style={{ fontSize: 18 }}>{category.icon || "❓"}</AppText>
                 )}
@@ -310,8 +336,8 @@ export const MonthDetailScreen = () => {
                       currentSummary.remainingCents > 0
                         ? colors.success
                         : currentSummary.remainingCents < 0
-                        ? colors.danger
-                        : colors.textSecondary
+                          ? colors.danger
+                          : colors.textSecondary
                     }
                   >
                     {formatWithSign(currentSummary.remainingCents, undefined, currency, hideCents).text}
@@ -479,6 +505,7 @@ export const MonthDetailScreen = () => {
       {!isSelectionMode && <FAB onPress={showAddExpenseModal} />}
 
       <AddExpenseModal />
+      <VerifyExpensesModal />
     </View>
   );
 };
@@ -618,6 +645,10 @@ const styles = StyleSheet.create({
   },
   sectionHeaderPaid: {
     opacity: 0.7,
+    backgroundColor: colors.success + "10",
+  },
+  sectionHeaderVerified: {
+    backgroundColor: colors.primary + "10",
   },
   textPaid: {
     textDecorationLine: "line-through",
