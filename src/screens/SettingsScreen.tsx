@@ -1,12 +1,65 @@
-import { AppText, Button, Card } from "@/components/common";
+import { AppText, Button, Card, ProfileSecurityModal } from "@/components/common";
 import { exportAndShare, ImportError, pickAndImport, UpdateService } from "@/services";
-import { useAppStore } from "@/stores";
+import { useAppStore, useUIStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Switch, TouchableOpacity, View } from "react-native";
+
+// Security section component
+const SecuritySection = () => {
+  const { currentProfileIsSecured, profiles, currentProfileId } = useAppStore();
+  const { showProfileSecurityModal } = useUIStore();
+  const currentProfile = profiles.find((p) => p.id === currentProfileId);
+
+  return (
+    <>
+      <Card style={securityStyles.section}>
+        <AppText variant="heading3" style={securityStyles.sectionTitle}>
+          Security
+        </AppText>
+        <TouchableOpacity style={securityStyles.menuItem} onPress={showProfileSecurityModal}>
+          <View style={securityStyles.menuItemLeft}>
+            <Ionicons
+              name={currentProfileIsSecured ? "shield-checkmark" : "shield-outline"}
+              size={20}
+              color={currentProfileIsSecured ? colors.success : colors.primary}
+            />
+            <View style={{ marginLeft: layout.spacing.m }}>
+              <AppText variant="bodyMedium">Profile Security</AppText>
+              <AppText variant="caption" color={colors.textMuted}>
+                {currentProfileIsSecured ? "Enabled" : "Not configured"}
+              </AppText>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
+      </Card>
+      <ProfileSecurityModal />
+    </>
+  );
+};
+
+const securityStyles = StyleSheet.create({
+  section: {
+    marginBottom: layout.spacing.l,
+    padding: layout.spacing.l,
+  },
+  sectionTitle: {
+    marginBottom: layout.spacing.m,
+  },
+  menuItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  menuItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+});
 
 export const SettingsScreen = () => {
   const [exporting, setExporting] = useState(false);
@@ -151,6 +204,8 @@ export const SettingsScreen = () => {
           <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
         </TouchableOpacity>
       </Card>
+
+      <SecuritySection />
 
       <Card style={styles.section}>
         <AppText variant="heading3" style={styles.sectionTitle}>

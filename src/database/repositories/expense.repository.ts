@@ -13,6 +13,7 @@ function mapToExpense(entity: ExpenseEntity): Expense {
     note: entity.note,
     expenseDate: entity.expense_date,
     isPaid: entity.is_paid === 1,
+    isVerified: entity.is_verified === 1,
     createdAt: entity.created_at,
     updatedAt: entity.updated_at,
     deletedAt: entity.deleted_at,
@@ -40,7 +41,7 @@ export const ExpenseRepository = {
       `SELECT * FROM expenses 
        WHERE month_id = ? AND deleted_at IS NULL 
        ORDER BY expense_date DESC, created_at DESC`,
-      [monthId]
+      [monthId],
     );
     return results.map(mapToExpense);
   },
@@ -54,7 +55,7 @@ export const ExpenseRepository = {
       `SELECT * FROM expenses 
        WHERE month_id = ? AND category_id = ? AND deleted_at IS NULL 
        ORDER BY expense_date DESC, created_at DESC`,
-      [monthId, categoryId]
+      [monthId, categoryId],
     );
     return results.map(mapToExpense);
   },
@@ -65,7 +66,7 @@ export const ExpenseRepository = {
   async findAll(): Promise<Expense[]> {
     const db = await getDatabase();
     const results = await db.getAllAsync<ExpenseEntity>(
-      "SELECT * FROM expenses ORDER BY expense_date DESC, created_at DESC"
+      "SELECT * FROM expenses ORDER BY expense_date DESC, created_at DESC",
     );
     return results.map(mapToExpense);
   },
@@ -77,7 +78,7 @@ export const ExpenseRepository = {
     const db = await getDatabase();
     const result = await db.getFirstAsync<{ total: number | null }>(
       "SELECT SUM(amount_cents) as total FROM expenses WHERE month_id = ? AND deleted_at IS NULL AND is_paid = 1",
-      [monthId]
+      [monthId],
     );
     return result?.total ?? 0;
   },
@@ -89,7 +90,7 @@ export const ExpenseRepository = {
     const db = await getDatabase();
     const result = await db.getFirstAsync<{ total: number | null }>(
       "SELECT SUM(amount_cents) as total FROM expenses WHERE month_id = ? AND deleted_at IS NULL AND is_paid = 0",
-      [monthId]
+      [monthId],
     );
     return result?.total ?? 0;
   },
@@ -105,7 +106,7 @@ export const ExpenseRepository = {
        WHERE month_id = ? AND deleted_at IS NULL 
        GROUP BY category_id 
        ORDER BY total DESC`,
-      [monthId]
+      [monthId],
     );
     return results.map((r) => ({ categoryId: r.category_id, total: r.total }));
   },
@@ -125,7 +126,7 @@ export const ExpenseRepository = {
         dto.amountCents,
         dto.note ?? null,
         expenseDate ?? new Date().toISOString().split("T")[0] ?? "",
-      ]
+      ],
     );
 
     const created = await this.findById(result.lastInsertRowId);
@@ -170,6 +171,8 @@ export const ExpenseRepository = {
       return existing;
     }
 
+    // Clear verification when expense is edited (any field change)
+    updates.push("is_verified = 0");
     updates.push("updated_at = datetime('now')");
     values.push(id);
 
@@ -207,7 +210,7 @@ export const ExpenseRepository = {
     const db = await getDatabase();
     const result = await db.getFirstAsync<{ count: number }>(
       "SELECT COUNT(*) as count FROM expenses WHERE month_id = ? AND deleted_at IS NULL",
-      [monthId]
+      [monthId],
     );
     return result?.count ?? 0;
   },
@@ -234,7 +237,42 @@ export const ExpenseRepository = {
     const placeholders = ids.map(() => "?").join(",");
     await db.runAsync(
       `UPDATE expenses SET deleted_at = datetime('now'), updated_at = datetime('now') WHERE id IN (${placeholders})`,
-      ids
+      ids,
     );
+  },
+
+  /**
+   * Verify all expenses for a month
+   */
+  async verifyAllForMonth(monthId: number): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync(
+      "UPDATE expenses SET is_verified = 1, updated_at = datetime('now') WHERE month_id = ? AND deleted_at IS NULL",
+      [monthId],
+    );
+  },
+
+  /**
+   * Clear verification for a single expense
+   */
+  async clearVerification(id: number): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync("UPDATE expenses SET is_verified = 0, updated_at = datetime('now') WHERE id = ?", [id]);
+  },
+
+  /**
+   * Get verification status for a month
+   */
+  async getVerificationStatus(monthId: number): Promise<{ total: number; verified: number }> {
+    const db = await getDatabase();
+    const result = await db.getFirstAsync<{ total: number; verified: number }>(
+      `SELECT 
+         COUNT(*) as total, 
+         SUM(CASE WHEN is_verified = 1 THEN 1 ELSE 0 END) as verified 
+       FROM expenses 
+       WHERE month_id = ? AND deleted_at IS NULL`,
+      [monthId],
+    );
+    return { total: result?.total ?? 0, verified: result?.verified ?? 0 };
   },
 };

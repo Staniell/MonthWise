@@ -3,12 +3,16 @@ import { getDatabase } from "../connection";
 export interface Profile {
   id: number;
   name: string;
+  isSecured: boolean;
+  authPasswordHash: string | null;
   createdAt: string;
 }
 
 interface ProfileRow {
   id: number;
   name: string;
+  is_secured: number;
+  auth_password_hash: string | null;
   created_at: string;
 }
 
@@ -73,7 +77,38 @@ export const ProfileRepository = {
       return mapRowToProfile(existing);
     }
     await db.runAsync("INSERT INTO profiles (id, name) VALUES (1, 'Default')");
-    return { id: 1, name: "Default", createdAt: new Date().toISOString() };
+    return { id: 1, name: "Default", isSecured: false, authPasswordHash: null, createdAt: new Date().toISOString() };
+  },
+
+  /**
+   * Enable security for a profile (requires password hash)
+   */
+  async enableSecurity(id: number, passwordHash: string): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync("UPDATE profiles SET is_secured = 1, auth_password_hash = ? WHERE id = ?", [passwordHash, id]);
+  },
+
+  /**
+   * Disable security for a profile
+   */
+  async disableSecurity(id: number): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync("UPDATE profiles SET is_secured = 0, auth_password_hash = NULL WHERE id = ?", [id]);
+  },
+
+  /**
+   * Get security settings for a profile
+   */
+  async getSecuritySettings(id: number): Promise<{ isSecured: boolean; passwordHash: string | null }> {
+    const db = await getDatabase();
+    const row = await db.getFirstAsync<{ is_secured: number; auth_password_hash: string | null }>(
+      "SELECT is_secured, auth_password_hash FROM profiles WHERE id = ?",
+      [id],
+    );
+    return {
+      isSecured: row?.is_secured === 1,
+      passwordHash: row?.auth_password_hash ?? null,
+    };
   },
 };
 
@@ -81,6 +116,8 @@ function mapRowToProfile(row: ProfileRow): Profile {
   return {
     id: row.id,
     name: row.name,
+    isSecured: row.is_secured === 1,
+    authPasswordHash: row.auth_password_hash,
     createdAt: row.created_at,
   };
 }

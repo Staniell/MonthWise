@@ -34,6 +34,7 @@ interface AppState {
 
   // Profile support
   currentProfileId: number;
+  currentProfileIsSecured: boolean;
   profiles: Profile[];
 
   // Current month detail view
@@ -91,6 +92,12 @@ interface AppState {
   createProfile: (name: string) => Promise<Profile>;
   deleteProfile: (id: number) => Promise<void>;
   renameProfile: (id: number, name: string) => Promise<void>;
+
+  // --- Actions: Security ---
+  enableProfileSecurity: (password: string) => Promise<void>;
+  disableProfileSecurity: () => Promise<void>;
+  verifyAllExpenses: () => Promise<void>;
+  loadSecurityStatus: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -102,6 +109,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   currency: "USD",
   hideCents: false,
   currentProfileId: 1,
+  currentProfileIsSecured: false,
   profiles: [],
   selectedMonthId: null,
   selectedMonthExpenses: [],
@@ -173,6 +181,9 @@ export const useAppStore = create<AppState>((set, get) => ({
           set({ currentProfileId: profileId });
         }
       }
+
+      // Load security status for current profile
+      await get().loadSecurityStatus();
 
       // Load currency preference
       const savedCurrency = await SettingsRepository.get("currency");
@@ -399,5 +410,35 @@ export const useAppStore = create<AppState>((set, get) => ({
     await ProfileRepository.rename(id, name);
     const profiles = await ProfileRepository.getAll();
     set({ profiles });
+  },
+
+  // --- Security ---
+  enableProfileSecurity: async (password: string) => {
+    const { currentProfileId } = get();
+    const { hashPassword } = await import("@/services/auth.service");
+    const hash = await hashPassword(password);
+    await ProfileRepository.enableSecurity(currentProfileId, hash);
+    set({ currentProfileIsSecured: true });
+    await get().loadProfiles();
+  },
+
+  disableProfileSecurity: async () => {
+    const { currentProfileId } = get();
+    await ProfileRepository.disableSecurity(currentProfileId);
+    set({ currentProfileIsSecured: false });
+    await get().loadProfiles();
+  },
+
+  verifyAllExpenses: async () => {
+    const { selectedMonthId } = get();
+    if (!selectedMonthId) return;
+    await ExpenseRepository.verifyAllForMonth(selectedMonthId);
+    await get().refreshData();
+  },
+
+  loadSecurityStatus: async () => {
+    const { currentProfileId } = get();
+    const settings = await ProfileRepository.getSecuritySettings(currentProfileId);
+    set({ currentProfileIsSecured: settings.isSecured });
   },
 }));

@@ -54,6 +54,11 @@ export const ExpenseItem: React.FC<ExpenseItemProps> = ({
             {expense.category.name}
           </AppText>
           <View style={styles.amountContainer}>
+            {expense.isVerified && (
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="shield-checkmark" size={12} color={colors.white} />
+              </View>
+            )}
             {expense.isPaid && (
               <View style={styles.paidBadge}>
                 <Ionicons name="checkmark" size={12} color={colors.white} />
@@ -145,6 +150,14 @@ const styles = StyleSheet.create({
     height: 14, // Reduced from 16
     borderRadius: 7,
     backgroundColor: colors.success,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  verifiedBadge: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.primary,
     alignItems: "center",
     justifyContent: "center",
   },

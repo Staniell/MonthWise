@@ -1,11 +1,13 @@
 // Database schema version and table definitions
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export const CREATE_TABLES = `
   -- User profiles for data isolation
   CREATE TABLE IF NOT EXISTS profiles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    is_secured INTEGER NOT NULL DEFAULT 0,
+    auth_password_hash TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -57,6 +59,7 @@ export const CREATE_TABLES = `
     note TEXT,
     expense_date TEXT NOT NULL DEFAULT (date('now')),
     is_paid INTEGER NOT NULL DEFAULT 0,
+    is_verified INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     deleted_at TEXT,

@@ -4,3 +4,4 @@ export * from "./Card";
 export * from "./ErrorBoundary";
 export * from "./FAB";
 export * from "./Input";
+export * from "./ProfileSecurityModal";

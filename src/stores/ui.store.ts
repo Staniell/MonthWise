@@ -7,6 +7,8 @@ interface UIState {
   isAllowanceSourcesModalVisible: boolean;
   isMonthOverrideModalVisible: boolean;
   isExportImportModalVisible: boolean;
+  isProfileSecurityModalVisible: boolean;
+  isVerifyExpensesModalVisible: boolean;
 
   // Edit targets
   editingExpenseId: number | null;
@@ -27,6 +29,12 @@ interface UIState {
   showExportImportModal: () => void;
   hideExportImportModal: () => void;
 
+  showProfileSecurityModal: () => void;
+  hideProfileSecurityModal: () => void;
+
+  showVerifyExpensesModal: () => void;
+  hideVerifyExpensesModal: () => void;
+
   hideAllModals: () => void;
 }
 
@@ -37,6 +45,8 @@ export const useUIStore = create<UIState>((set) => ({
   isAllowanceSourcesModalVisible: false,
   isMonthOverrideModalVisible: false,
   isExportImportModalVisible: false,
+  isProfileSecurityModalVisible: false,
+  isVerifyExpensesModalVisible: false,
   editingExpenseId: null,
   editingAllowanceSourceId: null,
 
@@ -85,6 +95,14 @@ export const useUIStore = create<UIState>((set) => ({
   showExportImportModal: () => set({ isExportImportModalVisible: true }),
   hideExportImportModal: () => set({ isExportImportModalVisible: false }),
 
+  // Profile Security modal
+  showProfileSecurityModal: () => set({ isProfileSecurityModalVisible: true }),
+  hideProfileSecurityModal: () => set({ isProfileSecurityModalVisible: false }),
+
+  // Verify Expenses modal
+  showVerifyExpensesModal: () => set({ isVerifyExpensesModalVisible: true }),
+  hideVerifyExpensesModal: () => set({ isVerifyExpensesModalVisible: false }),
+
   // Reset all
   hideAllModals: () =>
     set({
@@ -93,6 +111,8 @@ export const useUIStore = create<UIState>((set) => ({
       isAllowanceSourcesModalVisible: false,
       isMonthOverrideModalVisible: false,
       isExportImportModalVisible: false,
+      isProfileSecurityModalVisible: false,
+      isVerifyExpensesModalVisible: false,
       editingExpenseId: null,
       editingAllowanceSourceId: null,
     }),

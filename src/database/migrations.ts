@@ -16,6 +16,9 @@ export async function runMigrations(db: SQLite.SQLiteDatabase, fromVersion: numb
 
   // Add is_paid column to expenses
   await migrateAddIsPaidToExpenses(db);
+
+  // Add security columns to profiles and is_verified to expenses
+  await migrateAddVerificationSupport(db);
 }
 
 /**
@@ -61,7 +64,7 @@ async function migrateAddProfiles(db: SQLite.SQLiteDatabase): Promise<void> {
   try {
     // Check if profiles table exists
     const tables = await db.getAllAsync<{ name: string }>(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='profiles'"
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='profiles'",
     );
 
     if (tables.length === 0) {
@@ -128,6 +131,49 @@ async function migrateAddIsPaidToExpenses(db: SQLite.SQLiteDatabase): Promise<vo
     }
   } catch (error: unknown) {
     console.error("MIGRATION ERROR (is_paid):", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (!errorMessage.includes("duplicate column")) {
+      throw error;
+    }
+  }
+
+  console.log("=== MIGRATION END ===");
+}
+
+/**
+ * Migration: Add verification support
+ * - Adds is_secured and auth_password_hash to profiles
+ * - Adds is_verified to expenses
+ */
+async function migrateAddVerificationSupport(db: SQLite.SQLiteDatabase): Promise<void> {
+  console.log("=== MIGRATION START: Adding verification support ===");
+
+  try {
+    // Add security columns to profiles
+    const profileInfo = await db.getAllAsync<{ name: string }>("PRAGMA table_info(profiles)");
+    const hasIsSecured = profileInfo.some((col) => col.name === "is_secured");
+    const hasPasswordHash = profileInfo.some((col) => col.name === "auth_password_hash");
+
+    if (!hasIsSecured) {
+      await db.runAsync("ALTER TABLE profiles ADD COLUMN is_secured INTEGER NOT NULL DEFAULT 0");
+      console.log("Added is_secured to profiles");
+    }
+
+    if (!hasPasswordHash) {
+      await db.runAsync("ALTER TABLE profiles ADD COLUMN auth_password_hash TEXT");
+      console.log("Added auth_password_hash to profiles");
+    }
+
+    // Add is_verified column to expenses
+    const expenseInfo = await db.getAllAsync<{ name: string }>("PRAGMA table_info(expenses)");
+    const hasIsVerified = expenseInfo.some((col) => col.name === "is_verified");
+
+    if (!hasIsVerified) {
+      await db.runAsync("ALTER TABLE expenses ADD COLUMN is_verified INTEGER NOT NULL DEFAULT 0");
+      console.log("Added is_verified to expenses");
+    }
+  } catch (error: unknown) {
+    console.error("MIGRATION ERROR (verification):", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     if (!errorMessage.includes("duplicate column")) {
       throw error;

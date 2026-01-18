@@ -36,6 +36,7 @@ export interface Expense {
   note: string | null;
   expenseDate: string;
   isPaid: boolean;
+  isVerified: boolean;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
