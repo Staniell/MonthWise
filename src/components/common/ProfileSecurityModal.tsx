@@ -4,7 +4,19 @@ import { useAppStore, useUIStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Modal, Platform, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText } from "./AppText";
 import { Button } from "./Button";
 import { Input } from "./Input";
@@ -12,6 +24,7 @@ import { Input } from "./Input";
 export const ProfileSecurityModal = () => {
   const { isProfileSecurityModalVisible, hideProfileSecurityModal } = useUIStore();
   const { profiles, currentProfileId, loadProfiles } = useAppStore();
+  const insets = useSafeAreaInsets();
 
   const currentProfile = profiles.find((p) => p.id === currentProfileId);
   const hasPassword = !!currentProfile?.passwordHash;
@@ -21,6 +34,21 @@ export const ProfileSecurityModal = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // Track keyboard height for Android
+  useEffect(() => {
+    const showListener = Keyboard.addListener(Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow", (e) =>
+      setKeyboardHeight(e.endCoordinates.height),
+    );
+    const hideListener = Keyboard.addListener(Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide", () =>
+      setKeyboardHeight(0),
+    );
+    return () => {
+      showListener.remove();
+      hideListener.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (isProfileSecurityModalVisible) {
@@ -269,20 +297,35 @@ export const ProfileSecurityModal = () => {
 
   return (
     <Modal visible={isProfileSecurityModalVisible} animationType="slide" transparent>
-      <View style={styles.overlay}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardView}>
-          <View style={styles.modal}>
-            <View style={styles.header}>
-              <AppText variant="heading2">Profile Security</AppText>
-              <TouchableOpacity onPress={hideProfileSecurityModal}>
-                <Ionicons name="close" size={24} color={colors.textMuted} />
-              </TouchableOpacity>
-            </View>
+      <TouchableWithoutFeedback onPress={hideProfileSecurityModal}>
+        <View style={[styles.overlay, Platform.OS === "android" && { paddingBottom: keyboardHeight }]}>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboardView}>
+              <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                <View
+                  style={[
+                    styles.modal,
+                    { paddingBottom: Math.max(insets.bottom, layout.spacing.xxl) + layout.spacing.xxl },
+                  ]}
+                >
+                  <View style={styles.header}>
+                    <AppText variant="heading2">Profile Security</AppText>
+                    <TouchableOpacity onPress={hideProfileSecurityModal}>
+                      <Ionicons name="close" size={24} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
 
-            <View style={styles.content}>{renderContent()}</View>
-          </View>
-        </KeyboardAvoidingView>
-      </View>
+                  <View style={styles.content}>{renderContent()}</View>
+                </View>
+              </ScrollView>
+            </KeyboardAvoidingView>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
@@ -295,6 +338,9 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     width: "100%",
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "flex-end",
   },
   modal: {
@@ -302,8 +348,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: layout.borderRadius.xl,
     borderTopRightRadius: layout.borderRadius.xl,
     padding: layout.spacing.l,
-    paddingBottom: layout.spacing.xxl,
-    maxHeight: "80%",
+    paddingBottom: layout.spacing.xl,
+    maxHeight: "95%",
   },
   header: {
     flexDirection: "row",

@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.MonthWise",
+      "bundleIdentifier": "com.anonymous.MonthWise.dev",
       "buildNumber": "4"
     },
     "android": {
@@ -33,11 +33,7 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
-      "expo-router",
-      "expo-sqlite",
-      "expo-font"
-    ],
+    "plugins": ["expo-router", "expo-sqlite", "expo-font"],
     "experiments": {
       "typedRoutes": true
     },
