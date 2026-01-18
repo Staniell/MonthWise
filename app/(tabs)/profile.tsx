@@ -1,5 +1,5 @@
-import { AppText, Button, Card, Input } from "@/components/common";
-import { useAppStore } from "@/stores";
+import { AppText, Button, Card, Input, ProfileSecurityModal } from "@/components/common";
+import { useAppStore, useUIStore } from "@/stores";
 import { colors, layout } from "@/theme";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -15,6 +15,7 @@ export default function ProfileScreen() {
   const createProfile = useAppStore((state) => state.createProfile);
   const deleteProfile = useAppStore((state) => state.deleteProfile);
   const renameProfile = useAppStore((state) => state.renameProfile);
+  const { showProfileSecurityModal } = useUIStore();
 
   const [isCreateModalVisible, setCreateModalVisible] = useState(false);
   const [isRenameModalVisible, setRenameModalVisible] = useState(false);
@@ -69,7 +70,7 @@ export default function ProfileScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -133,14 +134,36 @@ export default function ProfileScreen() {
                   )}
                 </View>
               </View>
-              {profiles.length > 1 && (
+
+              <View style={styles.actionButtons}>
                 <TouchableOpacity
-                  onPress={() => handleDeleteProfile(item.id, item.name)}
+                  onPress={() => {
+                    if (item.id === currentProfileId) {
+                      showProfileSecurityModal();
+                    } else {
+                      Alert.alert("Switch Profile", "Please switch to this profile to manage its security settings.");
+                    }
+                  }}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  style={styles.actionButton}
                 >
-                  <Ionicons name="trash-outline" size={20} color={colors.danger} />
+                  <Ionicons
+                    name={item.isSecured ? "shield-checkmark" : "shield-outline"}
+                    size={20}
+                    color={item.isSecured ? colors.success : colors.textMuted}
+                  />
                 </TouchableOpacity>
-              )}
+
+                {profiles.length > 1 && (
+                  <TouchableOpacity
+                    onPress={() => handleDeleteProfile(item.id, item.name)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={styles.actionButton}
+                  >
+                    <Ionicons name="trash-outline" size={20} color={colors.danger} />
+                  </TouchableOpacity>
+                )}
+              </View>
             </TouchableOpacity>
           </Card>
         )}
@@ -217,6 +240,8 @@ export default function ProfileScreen() {
           </Card>
         </View>
       </Modal>
+
+      <ProfileSecurityModal />
     </SafeAreaView>
   );
 }
@@ -284,5 +309,13 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: "row",
     marginTop: layout.spacing.m,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: layout.spacing.s,
+  },
+  actionButton: {
+    padding: 4,
   },
 });

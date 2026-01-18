@@ -104,26 +104,56 @@ export const VerifyExpensesModal = () => {
 
             {unverifiedCount > 0 && (
               <>
-                {biometricAvailable && (
-                  <Button
-                    title={`Use ${biometricType}`}
-                    onPress={handleBiometricVerify}
-                    loading={isLoading}
-                    icon={<Ionicons name="finger-print" size={20} color={colors.primaryForeground} />}
-                    style={{ marginBottom: layout.spacing.m }}
-                  />
+                {/* Primary biometric option */}
+                {biometricAvailable ? (
+                  <View style={styles.biometricPrimary}>
+                    <TouchableOpacity
+                      style={styles.biometricButton}
+                      onPress={handleBiometricVerify}
+                      disabled={isLoading}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="finger-print" size={48} color={colors.primaryForeground} />
+                      <AppText
+                        variant="bodyMedium"
+                        color={colors.primaryForeground}
+                        style={{ marginTop: layout.spacing.s }}
+                      >
+                        Verify with {biometricType}
+                      </AppText>
+                    </TouchableOpacity>
+                    <AppText
+                      variant="caption"
+                      color={colors.textMuted}
+                      align="center"
+                      style={{ marginTop: layout.spacing.s }}
+                    >
+                      Tap to authenticate
+                    </AppText>
+                  </View>
+                ) : (
+                  <View style={styles.noBiometricInfo}>
+                    <Ionicons name="finger-print" size={24} color={colors.textMuted} />
+                    <AppText
+                      variant="caption"
+                      color={colors.textMuted}
+                      style={{ marginLeft: layout.spacing.s, flex: 1 }}
+                    >
+                      Fingerprint not available. Enroll in device settings to use.
+                    </AppText>
+                  </View>
                 )}
 
                 <View style={styles.dividerContainer}>
                   <View style={styles.divider} />
                   <AppText variant="caption" color={colors.textMuted} style={{ paddingHorizontal: layout.spacing.s }}>
-                    {biometricAvailable ? "or use password" : "Enter password"}
+                    {biometricAvailable ? "or use password" : "Use password"}
                   </AppText>
                   <View style={styles.divider} />
                 </View>
 
                 <Input
-                  placeholder="Password"
+                  placeholder="Enter password"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
@@ -132,9 +162,10 @@ export const VerifyExpensesModal = () => {
 
                 <Button
                   title="Verify with Password"
-                  variant="secondary"
+                  variant={biometricAvailable ? "secondary" : "primary"}
                   onPress={handlePasswordVerify}
                   loading={isLoading}
+                  disabled={!password}
                 />
               </>
             )}
@@ -181,5 +212,25 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 1,
     backgroundColor: colors.border,
+  },
+  biometricPrimary: {
+    alignItems: "center",
+    marginBottom: layout.spacing.m,
+  },
+  biometricButton: {
+    backgroundColor: colors.primary,
+    borderRadius: layout.borderRadius.l,
+    paddingVertical: layout.spacing.l,
+    paddingHorizontal: layout.spacing.xl,
+    alignItems: "center",
+    width: "100%",
+  },
+  noBiometricInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.background,
+    padding: layout.spacing.m,
+    borderRadius: layout.borderRadius.m,
+    marginBottom: layout.spacing.m,
   },
 });

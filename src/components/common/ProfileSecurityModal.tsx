@@ -194,21 +194,52 @@ export const ProfileSecurityModal = () => {
             // Not secured - show enable form
             <View style={styles.content}>
               <AppText variant="body" color={colors.textMuted} style={{ marginBottom: layout.spacing.m }}>
-                Set a password to enable expense verification. You'll be able to use password or{" "}
-                {biometricAvailable ? biometricType.toLowerCase() : "fingerprint"} to verify expenses.
+                Set a password to enable expense verification. Once enabled, you can verify expenses using your password
+                {biometricAvailable ? ` or ${biometricType.toLowerCase()}` : ""}.
               </AppText>
 
-              {biometricAvailable && (
-                <View style={styles.biometricInfo}>
-                  <Ionicons name="finger-print" size={20} color={colors.success} />
-                  <AppText variant="caption" color={colors.success} style={{ marginLeft: layout.spacing.xs }}>
-                    {biometricType} available
-                  </AppText>
+              {/* Biometric status section */}
+              <View style={styles.biometricSection}>
+                <View style={styles.biometricHeader}>
+                  <Ionicons
+                    name="finger-print"
+                    size={24}
+                    color={biometricAvailable ? colors.success : colors.textMuted}
+                  />
+                  <View style={{ marginLeft: layout.spacing.s, flex: 1 }}>
+                    <AppText variant="bodyMedium">
+                      {biometricAvailable ? `${biometricType} Ready` : "Fingerprint Not Available"}
+                    </AppText>
+                    <AppText variant="caption" color={colors.textMuted}>
+                      {biometricAvailable
+                        ? "Will be enabled automatically with password"
+                        : "Enroll fingerprint in device settings to use"}
+                    </AppText>
+                  </View>
+                  {biometricAvailable && <Ionicons name="checkmark-circle" size={24} color={colors.success} />}
                 </View>
-              )}
+
+                {biometricAvailable && (
+                  <TouchableOpacity
+                    style={styles.testBiometricButton}
+                    onPress={async () => {
+                      const success = await AuthService.authenticateWithBiometric("Test fingerprint");
+                      if (success) {
+                        Alert.alert("Success", `${biometricType} is working correctly!`);
+                      } else {
+                        Alert.alert("Cancelled", "Fingerprint test was cancelled or failed");
+                      }
+                    }}
+                  >
+                    <AppText variant="caption" color={colors.primary}>
+                      Test {biometricType}
+                    </AppText>
+                  </TouchableOpacity>
+                )}
+              </View>
 
               <Input
-                placeholder="New password"
+                placeholder="New password (min 4 characters)"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -221,7 +252,11 @@ export const ProfileSecurityModal = () => {
                 secureTextEntry
                 containerStyle={{ marginBottom: layout.spacing.l }}
               />
-              <Button title="Enable Security" onPress={handleEnableSecurity} loading={isLoading} />
+              <Button
+                title={biometricAvailable ? `Enable Password + ${biometricType}` : "Enable Password Security"}
+                onPress={handleEnableSecurity}
+                loading={isLoading}
+              />
             </View>
           )}
         </View>
@@ -279,5 +314,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: layout.spacing.m,
     backgroundColor: colors.success + "10",
     borderRadius: layout.borderRadius.m,
+  },
+  biometricSection: {
+    backgroundColor: colors.background,
+    borderRadius: layout.borderRadius.m,
+    padding: layout.spacing.m,
+    marginBottom: layout.spacing.m,
+  },
+  biometricHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  testBiometricButton: {
+    marginTop: layout.spacing.s,
+    alignSelf: "flex-start",
+    paddingVertical: layout.spacing.xs,
+    paddingHorizontal: layout.spacing.s,
+    backgroundColor: colors.primary + "15",
+    borderRadius: layout.borderRadius.s,
   },
 });
