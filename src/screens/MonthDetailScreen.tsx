@@ -69,6 +69,7 @@ export const MonthDetailScreen = () => {
           data: [],
           totalCents: 0,
           paidCents: 0,
+          unpaidCents: 0,
           id: catId,
         };
       }
@@ -76,12 +77,21 @@ export const MonthDetailScreen = () => {
       acc[catId].totalCents += expense.amountCents;
       if (expense.isPaid) {
         acc[catId].paidCents += expense.amountCents;
+      } else {
+        acc[catId].unpaidCents += expense.amountCents;
       }
       return acc;
     },
     {} as Record<
       number,
-      { category: any; data: ExpenseWithCategory[]; totalCents: number; paidCents: number; id: number }
+      {
+        category: any;
+        data: ExpenseWithCategory[];
+        totalCents: number;
+        paidCents: number;
+        unpaidCents: number;
+        id: number;
+      }
     >,
   );
 
@@ -295,7 +305,7 @@ export const MonthDetailScreen = () => {
           />
         )}
         renderSectionHeader={({
-          section: { category, totalCents, paidCents, originalDataCount, isFullyPaid, isFullyVerified },
+          section: { category, totalCents, paidCents, unpaidCents, originalDataCount, isFullyPaid, isFullyVerified },
         }) => (
           <TouchableOpacity
             style={[
@@ -327,9 +337,27 @@ export const MonthDetailScreen = () => {
             </View>
             <View style={styles.sectionHeaderRight}>
               <View style={styles.sectionAmounts}>
-                {paidCents > 0 && (
-                  <AppText variant="caption" color={colors.success}>
-                    {formatCurrency(paidCents, undefined, currency, hideCents)} paid
+                {paidCents > 0 && unpaidCents > 0 && (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <AppText variant="small" color={colors.success}>
+                      {formatCurrency(paidCents, undefined, currency, hideCents)}
+                    </AppText>
+                    <AppText variant="small" color={colors.textMuted}>
+                      {" / "}
+                    </AppText>
+                    <AppText variant="small" color={colors.warning}>
+                      {formatCurrency(unpaidCents, undefined, currency, hideCents)}
+                    </AppText>
+                  </View>
+                )}
+                {paidCents > 0 && unpaidCents === 0 && (
+                  <AppText variant="small" color={colors.success}>
+                    Fully Paid
+                  </AppText>
+                )}
+                {paidCents === 0 && (
+                  <AppText variant="small" color={colors.warning}>
+                    Total Unpaid
                   </AppText>
                 )}
                 <AppText variant="bodyMedium" style={isFullyPaid && styles.textPaid}>
