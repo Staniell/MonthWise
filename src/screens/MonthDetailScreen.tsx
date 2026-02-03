@@ -68,14 +68,21 @@ export const MonthDetailScreen = () => {
           category: expense.category,
           data: [],
           totalCents: 0,
+          paidCents: 0,
           id: catId,
         };
       }
       acc[catId].data.push(expense);
       acc[catId].totalCents += expense.amountCents;
+      if (expense.isPaid) {
+        acc[catId].paidCents += expense.amountCents;
+      }
       return acc;
     },
-    {} as Record<number, { category: any; data: ExpenseWithCategory[]; totalCents: number; id: number }>,
+    {} as Record<
+      number,
+      { category: any; data: ExpenseWithCategory[]; totalCents: number; paidCents: number; id: number }
+    >,
   );
 
   // 2. Sort categories and expenses
@@ -288,7 +295,7 @@ export const MonthDetailScreen = () => {
           />
         )}
         renderSectionHeader={({
-          section: { category, totalCents, originalDataCount, isFullyPaid, isFullyVerified },
+          section: { category, totalCents, paidCents, originalDataCount, isFullyPaid, isFullyVerified },
         }) => (
           <TouchableOpacity
             style={[
@@ -319,9 +326,16 @@ export const MonthDetailScreen = () => {
               </View>
             </View>
             <View style={styles.sectionHeaderRight}>
-              <AppText variant="bodyMedium" style={isFullyPaid && styles.textPaid}>
-                {formatCurrency(totalCents, undefined, currency, hideCents)}
-              </AppText>
+              <View style={styles.sectionAmounts}>
+                {paidCents > 0 && (
+                  <AppText variant="caption" color={colors.success}>
+                    {formatCurrency(paidCents, undefined, currency, hideCents)} paid
+                  </AppText>
+                )}
+                <AppText variant="bodyMedium" style={isFullyPaid && styles.textPaid}>
+                  {formatCurrency(totalCents, undefined, currency, hideCents)}
+                </AppText>
+              </View>
               <Ionicons
                 name={collapsedCategories.has(category.id) ? "chevron-down" : "chevron-up"}
                 size={18}
@@ -640,6 +654,9 @@ const styles = StyleSheet.create({
   sectionHeaderRight: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  sectionAmounts: {
+    alignItems: "flex-end",
   },
   categoryIcon: {
     width: 32,
